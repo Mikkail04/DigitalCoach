@@ -2,12 +2,12 @@ import Head from "next/head";
 import styles from "./layout.module.scss";
 import { PropsWithChildren } from "react";
 import NavBar from "../organisms/NavBar";
-import useAuthContext from "@App/lib/auth/AuthContext";
+import { useAuth } from "@App/lib/auth/AuthContextProvider";
 
 export const siteTitle = "Digital Coach";
 
 export default function CoreLayout({ children }: PropsWithChildren<{}>) {
-  const auth = useAuthContext();
+  const auth = useAuth();
 
   return (
     <>
@@ -18,7 +18,7 @@ export default function CoreLayout({ children }: PropsWithChildren<{}>) {
       </Head>
 
       <div className={styles.page_container}>
-        {auth.currentUser && <NavBar />}
+        {auth.userData && <NavBar />}
         <div className={styles.container}>
           <Head>
             <title>{siteTitle}</title>

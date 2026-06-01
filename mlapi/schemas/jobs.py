@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 from typing import Optional, Dict, Any, List
 from enum import Enum
 
@@ -31,19 +31,3 @@ class JobResponse(BaseModel):
     status: JobStatus
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
-
-
-class CreateAnswerJobRequest(BaseModel):
-    """
-    Request to create an answer job
-    """
-
-    video_url: str
-
-
-class JobsListResponse(BaseModel):
-    """
-    Response model for listing jobs
-    """
-
-    jobs: List[JobResponse] = Field(default_factory=list)

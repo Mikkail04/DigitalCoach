@@ -1,17 +1,41 @@
 /** @type {import('next').NextConfig} */
-const withTM = require("next-transpile-modules")([
-  "@fullcalendar/common",
-  "@babel/preset-react",
-  "@fullcalendar/common",
-  "@fullcalendar/daygrid",
-  "@fullcalendar/react",
-]);
-module.exports = withTM({
-  reactStrictMode: true,
-  images: {
-    domains: ["localhost", "127.0.0.1"],
+const nextConfig = {
+//   reactStrictMode: true,
+  output: "standalone",
+
+  transpilePackages: [
+    "@fullcalendar/common",
+    "@fullcalendar/daygrid",
+    "@fullcalendar/react",
+    "@fullcalendar/core",
+  ],
+
+  // Enable the fast SWC compiler for Emotion (replaces Babel)
+  compiler: {
+    emotion: true,
   },
-  typescript:{
+  images: {
+    domains: ["res.cloudinary.com"],
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+      },
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com", // For production Firebase
+      },
+    ],
+  },
+
+  typescript: {
     ignoreBuildErrors: true,
-  }
-});
+  },
+
+};
+
+module.exports = nextConfig;

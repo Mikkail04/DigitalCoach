@@ -1,0 +1,142 @@
+services:
+  # --- Frontend Service --- 
+  frontend:
+    build: ./digital-coach-app # Path to frontend Dockerfile
+    # Put secrets in the container environment as they're for runtime use
+    environment:
+      - NODE_ENV=development # Set Node environment to development to do things like enable emulators
+    # Required so changes are reflected in Next.js without restarting the container
+      - WATCHPACK_POLLING=true # only for webpack
+    env_file:
+      - ./digital-coach-app/.env # load environment variables from .env file
+    volumes:
+      # Mount the frontend code for live development
+      - ./digital-coach-app:/app
+    ports:
+      # Expose port 3000 for the frontend
+      - "3000:3000"
+    depends_on:
+      - api # Ensure the backend API is started before the frontend
+    networks:
+      - app-network # use the shared network to communicate with the backend
+
+  # Firebase Emulator Suite for local development
+  firebase:
+    # use pre-built image with firebase tools
+    image: andreysenov/firebase-tools:latest-node-22-slim
+    environment:
+      - FUNCTIONS_EMULATOR_TIMEOUT_SECONDS=180
+    user: root
+    volumes:
+      # mount frontend as it contains firebase config and rules
+      - ./digital-coach-app:/home/node/app
+    working_dir: /home/node/app # set working directory to non-root user's home
+    # expose the necessary ports for the emulators
+    ports:
+      - "9099:9099" # Auth Emulator
+      - "8080:8080" # Firestore Emulator
+      - "9199:9199" # Storage Emulator
+      - "4000:4000" # Firebase UI
+      - "5001:5001" # Functions Emulator
+    # Start the emulators (that are needed) with the specified config file
+    command: firebase emulators:start --inspect-functions --only auth,firestore,storage,functions --project=demo-digital-coach --debug
+    networks:
+      - app-network # use the shared network to the communicate with the frontend and backend
+
+  # --- Backend Services ---
+  # API service 
+  api:
+    build: ./mlapi # Path to backend Dockerfile
+    ports:
+      - "8000:8000" # Expose port 8000 for the API
+    env_file:
+      - ./mlapi/.env # load the environment variables before starting container
+    environment:  
+      - ENVIRONMENT=development # used when connecting to Firebase to switch between emulators and real services
+    volumes:
+      - ./mlapi:/app # Mount backend code for live development
+      - /app/.venv # Preserves the virtual environment inside the container
+      - ./mlapi/digital-coach-firebase-adminsdk.json:/app/digital-coach-firebase-adminsdk.json
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips="*" # Start the API for development, use --reload for auto-reload but its CPU intensive. This overrides the default CMD in the Dockerfile which is meant for production.
+    depends_on:
+      - redis # Ensure Redis is started before the API
+      - firebase # Ensure firebase starts before the backend tries to connect to it
+    networks:
+      - app-network # Use the shared network to communicate with the other services
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # in Linux, host.docker.internal isn't automatically defined
+
+  # Redis for job queue and caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - app-network
+
+  # High priority worker for facial and audio analysis
+  high-worker:
+    build: ./mlapi
+    command: python -m redisStore.worker high
+    depends_on:
+      - redis
+    env_file:
+      - ./mlapi/.env # load the environment variables before starting container
+    environment:  
+      - ENVIRONMENT=development # used when connecting to Firebase to switch between emulators and real services
+    volumes:
+      - ./mlapi/data:/app/data
+      - ./mlapi:/app
+      - /app/.venv # Preserves the virtual environment inside the container
+    networks:
+      - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # in Linux, host.docker.internal isn't automatically defined
+    deploy:
+      replicas: 2
+
+  # Default worker for other tasks
+  default-worker:
+    build: ./mlapi
+    command: python -m redisStore.worker default
+    depends_on:
+      - redis
+    env_file:
+      - ./mlapi/.env # load the environment variables before starting container
+    environment:  
+      - ENVIRONMENT=development # used when connecting to Firebase to switch between emulators and real services
+    volumes:
+      - ./mlapi/data:/app/data
+      - ./mlapi:/app
+      - /app/.venv # Preserves the virtual environment inside the container
+    networks:
+      - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # in Linux, host.docker.internal isn't automatically defined
+    deploy:
+      replicas: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+
+models:
+  llm:
+    model: ai/qwen3:4B-UD-Q4_K_XL # LLM model we're using
+    context_size: 8192 # context size (how much many tokens the model can process at any given time which includes your prompt and the LLM's response), each model has their own max size you can check using `docker model inspect <model name>` (make this smaller if you experience out of memory errors but there needs to be enough context for the LLM to make detailed responses)
+    runtime_flags:
+      - "--log-prefix" # Enable prefix in log messages
+      - "--log-timestamps" # Enable timestamps in log messages
+      - "--log-colors" # Enable colored logging
+      - "--threads" # Number of CPU threads to use during generation (Docker can use both CPU and GPU but GPU-only is faster)
+      - "4"
+      - "--batch-size" # batch size for processing prompts (higher = faster processing of prompts, and you may comment this out if you're experiencing performance issues)
+      - "1024"
+      - "--n-gpu-layers" # number of layers to offload to GPU (total number of layers depends on the model) Docker model runner can use both CPU and GPU of ngl < total number of layers. Lower --ngl if running out of VRAM. Increase --ngl if there's low GPU usage during inference."
+      - "20"

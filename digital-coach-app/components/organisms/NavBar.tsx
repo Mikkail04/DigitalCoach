@@ -2,10 +2,10 @@ import Link from "next/link";
 import Button from "../atoms/Button";
 import style from "./Navbar.module.scss";
 import LogoutIcon from "@mui/icons-material/Logout";
-import useAuthContext from "@App/lib/auth/AuthContext";
+import { useAuth } from "@App/lib/auth/AuthContextProvider";
 
 export default function NavBar() {
-  const { logout } = useAuthContext();
+  const { logout } = useAuth();
 
   return (
     <div className={style.main}>
@@ -17,12 +17,12 @@ export default function NavBar() {
           <Link href="/" className={style.linksText}>
             Dashboard
           </Link>
-          <Link href="/video" className={style.linksText}>
+          {/* <Link href="/video" className={style.linksText}>
             Record a Mock Interview
-          </Link>
-          <Link href="/storytelling" className={style.linksText}>
+          </Link> */}
+          {/* <Link href="/storytelling" className={style.linksText}>
             Practice Storytelling
-          </Link>
+          </Link> */}
           <Link href="/naturalconversation" className={style.linksText}>
             Natural Conversation
           </Link>
@@ -32,13 +32,13 @@ export default function NavBar() {
           {/* <Link href='/past'>
             <a className={style.linksText}>Review Past Interviews</a>
           </Link> */}
-          <Link href="/start/custom" className={style.linksText}>
+          {/* <Link href="/start/custom" className={style.linksText}>
             Create Custom Question Set
-          </Link>
+          </Link> */}
           {/*Here while developing, can be removed later if desired */}
-          <Link href="/connections" className={style.linksText}>
+          {/* <Link href="/connections" className={style.linksText}>
             Connections
-          </Link>
+          </Link> */}
           <Link href="/progress" className={style.linksText}>
             Progress Tracking
           </Link>

@@ -1,0 +1,436 @@
+import React, { useRef, useState, useEffect } from "react";
+import { Video, VideoOff, Mic, MicOff } from "lucide-react"; 
+import styles from "@App/styles/interview/NaturalConversationPage.module.scss";
+import { useAuth } from "@App/lib/auth/AuthContextProvider";
+import { StreamingTranscriber } from "assemblyai"; 
+import { useRouter } from "next/router";
+export const MAX_SESSION_TIME = 1 * 60; // sandbox mode for HeyGen LiveAvatar only lasts for around 1 minute  
+const MIN_SESSION_DURATION = 20; // minimum duration for an interview for it to be counted
+
+// Define the shape of this components props
+interface VideoRecorderProps {
+    startInterview: () => Promise<void>;
+    stopInterview: (duration: string, timeStarted: string) => Promise<void>;
+    timeLeft: number; // interview timer
+    setTimeLeft: React.Dispatch<React.SetStateAction<number>>; // pass in the setter for the parent's timeLeft state
+    setCameraError: React.Dispatch<React.SetStateAction<string>>; // pass in the setter for the parent's cameraError state
+    onTranscriptChange?: (transcript: string, isFinal: boolean) => void; // optional callback for sending the transcript to the parent component
+}
+
+/**
+ * Handles recording the user's camera and audio.
+ */
+function VideoRecorder({startInterview, stopInterview, timeLeft, setTimeLeft, setCameraError, onTranscriptChange}: VideoRecorderProps) {
+    const [isRecording, setIsRecording] = useState(false); // keep track of recording state
+    const [stream, setStream] = useState<MediaStream>(); // stores user's camera stream
+    const [videoURL, setVideoURL] = useState<string>(); // download URL for user's side of the interview
+    const [videoEnabled, setVideoEnabled] = useState(false);
+    const [audioEnabled, setAudioEnabled] = useState(false);
+
+    const transcriberRef = useRef<StreamingTranscriber | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const workletNodeRef = useRef<AudioWorkletNode | null>(null); 
+
+    const videoRef = useRef<HTMLVideoElement>(null); // reference to video element 
+    const mediaRecorderRef = useRef<MediaRecorder>(null); // reference to media recorder recording user's video/audio
+    const streamRef = useRef<MediaStream>(null); // reference to user's video and/or audio streams
+    const chunksRef = useRef<Blob[]>([]); // stores video as an array of chunks
+    let isMounted = useRef(false);
+    let timeStartedRef = useRef("");
+    const host = process.env.NEXT_PUBLIC_HOST;
+    const { userData } = useAuth(); // extract user's Firestore data  
+    const router = useRouter();
+
+    // session terminates automatically when timer runs out
+    useEffect(() => {
+        let timer: NodeJS.Timeout; 
+        // decrement timer if interview is still going
+        if (isRecording && timeLeft > 0) {
+            // decrement every second
+            timer = setInterval(() => {
+                setTimeLeft((prevTime) => prevTime - 1);
+            }, 1000); 
+        }
+        // time is up, stop recording
+        else if (isRecording && timeLeft === 0) {
+            stopRecording();
+        }
+
+        // stop timer
+        return () => clearInterval(timer);
+        
+    }, [isRecording, timeLeft]);
+
+
+
+    useEffect(() => {
+        startPreview();
+        isMounted.current = true;
+        return () => {
+            // stop recording user camera and mic when component unmounts
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach((track) => track.stop());
+                console.log("Turning off user camera and microphone...");
+            }
+            const stopAudio = async () => {
+
+                // close websocket to AssemblyAI
+                if (transcriberRef.current) {
+                    await transcriberRef.current.close();
+                    transcriberRef.current = null;
+                }
+                if (audioContextRef.current) {
+                    await audioContextRef.current.close();
+                    audioContextRef.current = null;
+                }
+            }
+            stopAudio();
+            isMounted.current = false;
+        }  
+    }, []);
+
+    /**
+     * Toggles the user's video camera. Note that its pausing the camera recording and not completely turning it off so the video recording doesn't get disabled preemptively.
+     */
+    const toggleVideo = () => {
+        const newState = !videoEnabled;
+        setVideoEnabled(newState);
+        // disable video track (this will not turn off the camera, but it will stop transmitting the camera feed from rendering, we need this so the entire video can be recorded)
+        if (streamRef.current) {
+            streamRef.current.getVideoTracks().forEach((track) => {
+                track.enabled = newState;
+            });
+        }
+    }
+
+    /**
+     * Toggles the user's microphone.
+     */
+    const toggleAudio = () => {
+        const newState = !audioEnabled;
+        setAudioEnabled(newState);
+        if (streamRef.current) {
+            streamRef.current.getAudioTracks().forEach((track) => {
+                track.enabled = newState;
+            });
+        }
+    }
+
+    /**
+     * Sets up the media recorder and starts recording user's camera and microphone.
+     * @returns Video download URL
+     */
+    const startRecording = async () => {
+        // start preview in case media stream isn't set up yet 
+        if (!stream) {
+            await startPreview();
+            return;
+        }
+
+        // create media recorder to record user's camera/audio
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        chunksRef.current = []; // reset old data in chunks array
+        
+        // register event listener for when there's data available 
+        // add data to the chunks array
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                chunksRef.current.push(event.data);
+            }
+        };
+
+        // register event listener when recording stops
+        // once the recorder stops, create download URL for user's side of the interview
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(chunksRef.current, {
+                type: "video/webm",
+            });
+            const url = URL.createObjectURL(blob);
+            setVideoURL(url); // set download URL for video 
+        };
+
+        // save time when started (format of MM/)
+        timeStartedRef.current = new Date().toLocaleDateString("en-US", {
+            day: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            month: "2-digit",
+        });
+        setTimeLeft(MAX_SESSION_TIME); // restart timer
+        setVideoURL(""); // clear out old recording url 
+        
+
+        // get temporary AssemblyAI authentication token from our backend
+        try {
+            const response = await fetch(`${host}/api/assemblyai/token`, {
+                method: "GET",
+            });
+            const { token } = await response.json();
+            if (response.ok) {
+                console.log(`AssemblyAI token request successful!`);
+            } else {
+                throw `Error: ${response.statusText || "Something went wrong"}`;
+            }
+
+            // configurations for AssemblyAI API that get sent as query parameters to the WebSocket URL
+            const transcriber = new StreamingTranscriber({
+                token: token,
+                sampleRate: 16000,
+                speechModel: "u3-rt-pro", // AssemblyAI's Streaming Universal 3 Pro can handle different languages as well as keep track of filler words
+                formatTurns: true, // get transcripts with proper punctuation
+                maxSpeakers: 2, // only the interviewer and user will be talking
+                // speakerLabels: true, // enable speaker diarization
+                // prompt: "" // AssemblyAI's Universal 3 Pro supports prompting which can be used for punctuation rules and other things but the model also has a built-in system prompt with rules about punctuation and filler words  
+            });
+
+            // event handler for when connection to AssemblyAI API is established via websocket
+            transcriber.on("open", ({id}) => {
+                console.log(`AssemblyAI ready to transcribe! Session id: ${id}`);
+            });
+            
+            // event handler for when websocket to AssemblyAI is closed 
+            transcriber.on("close", (code: number, reason: string) => {
+                console.log(`WebSocket closed: ${code}\nReason: ${reason}`);
+            });
+
+            // event handler for when we receive a message from AssemblyAI
+            // AssemblyAI uses a turn-based transcription where turn events contain metadata on the words spoken in the current turn 
+            transcriber.on("turn", (message) => {
+                // console.log(`Turn: ${JSON.stringify(message)}`);
+                // AssemblyAI provides partial (in-progress) sentences as well as final sentences 
+                // for now, we'll only send the completed sentences
+                if (message.end_of_turn && onTranscriptChange) {
+                    onTranscriptChange(`${userData?.name || "User"}: ${message.transcript}`, true);
+                }
+            });
+
+            // event handler for when an error occurs
+            transcriber.on("error", (error: Error) => {
+                console.error(`AssemblyAI WebSocket Error: ${error}`);
+            });
+
+            await transcriber.connect(); // connect to AssemblyAI API via websocket
+            transcriberRef.current = transcriber;
+
+            // create audio worklet to convert audio data into PCM data for AssemblyAI
+            const audioContext = new window.AudioContext({sampleRate: 16000});
+            audioContextRef.current = audioContext;
+
+            // create audio context source from user's video and audio stream 
+            const source = audioContext.createMediaStreamSource(stream); 
+
+            // load audio worklet from Next.js public folder
+            await audioContext.audioWorklet.addModule("/pcmprocessor.js"); 
+
+            // instantiate the processor we registered as pcm-processor 
+            const workletNode = new AudioWorkletNode(audioContext, 'pcm-processor');
+            workletNodeRef.current = workletNode;
+            // listen for the Int16 buffer from audio worklet node 
+            workletNode.port.onmessage = (event) => {
+                if (transcriberRef.current) {
+                    try {
+                        // send the PCM data from audio worklet node to AssemblyAI
+                        transcriberRef.current.sendAudio(event.data);
+                    } catch (e) {
+                        console.error(`Could not send audio chunk. WebSocket may be closed. ${e}`);
+                    }
+                }
+            }
+            // pipe the microphone data (source) into the audio worklet
+            source.connect(workletNode);
+            
+            setIsRecording(true); // recording has started
+        } catch (error) {
+            console.error(`AssemblyAI Error: ${error}`);
+        }
+            
+        mediaRecorder.start(); // start recording user's camera and microphone
+        // invoke callback from parent component (expected to start HeyGen Session)
+        await startInterview();
+    }
+
+    /**
+     * Stop recording user camera.
+     */
+    const stopRecording = async () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current?.stop(); // stop recording user camera and microphone
+            
+            // close websocket to AssemblyAI
+            if (transcriberRef.current) {
+                await transcriberRef.current.close();
+                transcriberRef.current = null;
+            }
+
+            // release audio resources
+            if (audioContextRef.current) {
+                await audioContextRef.current.close();
+                audioContextRef.current = null;
+            }
+
+            // turn of camera and microphone
+            console.log("Turning off camera and mic...");
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach((track) => track.stop());
+            }
+            setIsRecording(false);
+            
+            // check if interview was too short to be counted
+            const duration = MAX_SESSION_TIME - timeLeft; 
+            if (duration < MIN_SESSION_DURATION) {
+                alert(`Interview must be at least ${MIN_SESSION_DURATION}s long to be counted.`);
+                // restart interview
+                window.location.href = "/naturalconversation";
+                return;
+            } 
+
+            // invoke callback from parent component (expected to stop HeyGen session and save interview)
+            await stopInterview(formatDuration(duration), timeStartedRef.current);
+        }
+    }
+    
+    /**
+     * Format duration into MMm SSs not 0-padded
+     * @param seconds 
+     */
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60).toString();
+        const secs = (seconds % 60).toString();
+        return `${mins}m ${secs}s`;
+    }
+
+    /**
+     * Requests user's video/audio and handles the preview of user's camera video.
+     */
+    const startPreview = async () => {
+        try {
+            // request access to user's camera and microphone
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: {
+                    sampleRate: 16000, // AssemblyAI expects 16Hhz sample rate
+                    channelCount: 1, 
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                },
+            });
+            // if the user left webpage before giving permission, turn of camera and microphone
+            if (!isMounted.current) {
+                console.log("Component unmounted before camera loaded. Aborting...");
+                mediaStream.getTracks().forEach((track) => track.stop());
+                console.log("Turning off user camera and microphone...");
+                return; 
+            }
+            streamRef.current = mediaStream; // save media stream reference
+            setStream(mediaStream); // store media stream
+            // attach camera stream to video element to show live preview
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+            }
+
+            // enable video and audio once user has agreed 
+            setVideoEnabled(true);
+            setAudioEnabled(true);
+            
+        } catch (error) {
+            console.error(`Error accessing media device: ${error}`);
+            if (error instanceof Error) {
+                setCameraError(`${error.message}: Please allow video and audio permissions to proceed. You may disable them before recording begins.`);
+                setVideoEnabled(false);
+            }
+
+        }
+    }
+
+
+    return (
+        <>
+        <div className={styles.videoCard}>
+            <div className={`${styles.videoHeader} ${styles.userHeader}`}>
+                <p>Your Camera</p>
+                {/* Toggle video camera */}
+                <div className={styles.controls}>
+                    <button
+                        onClick={toggleVideo}
+                        className={videoEnabled ? styles.enabled : styles.disabled}
+                        disabled={!stream} // wait until video is ready before enabling toggling
+                    >
+                        {videoEnabled ? (
+                            <Video />
+                        ) : (
+                            <VideoOff />
+                        )}
+                    </button>
+                    {/* Toggle microphone */}
+                    <button
+                        onClick={toggleAudio}
+                        className={audioEnabled ? styles.enabled : styles.disabled }
+                        disabled={!stream} // wait until video is ready before enabling toggling
+                    >
+                        { audioEnabled ? (
+                            <Mic />
+                        ): (
+                            <MicOff />
+                        )}
+                    </button>
+                </div>
+            </div>
+            
+            <div className={`${styles.videoContent} ${styles.userCamera}`}>
+                {/* User Camera Video */}
+                <video 
+                        ref={videoRef}
+                        autoPlay
+                        muted
+                        style={{display: videoEnabled ? "block" : "none"}}
+                    />
+                    {!videoEnabled && (
+                        <div className={styles.cameraOff}>
+                            <VideoOff/>
+                            <p>Camera is off</p>
+                        </div>
+                    )}
+            </div>
+        </div>
+
+        {/* Start/Stop Buttons */}
+        <div className={styles.buttonBox}>
+            
+            {!isRecording ? 
+                <button 
+                    className={`${styles.startButton} ${styles}`}
+                    onClick={startRecording}
+                    disabled={!stream}
+                >
+                    Start Recording
+                </button>:
+                <>
+                    <button 
+                        className={styles.startButton}
+                        onClick={stopRecording}
+                    >
+                        Submit Recording
+                    </button>
+                    <button
+                        className={styles.startButton}
+                        onClick={() => router.reload()}
+                    >
+                        Cancel
+                    </button>
+                </>}
+            
+            
+
+
+            {/* If the video download URL is ready, store it in Firebase for preview later */}
+            {/* {videoURL 
+            ? <a href={videoURL} download="user-interview.webm" className={styles.startButton}>Download Video</a> : <a href=""></a>} */}
+        </div>
+        </>
+
+    )
+}
+
+export default VideoRecorder;

@@ -1,0 +1,54 @@
+name: Playwright Tests
+on: 
+  push:
+jobs:
+  playwright-tests:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+
+    - name: Create .env file with Secrets
+      run: |
+        # Ensure the directory exists first
+        # mkdir -p digital-coach-app
+
+        # These secrets are for starting up the Firebase services
+        echo "NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}" >> digital-coach-app/.env
+        echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}" >> digital-coach-app/.env
+        echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}" >> digital-coach-app/.env
+        echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}" >> digital-coach-app/.env
+        echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}" >> digital-coach-app/.env
+        echo "NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}" >> digital-coach-app/.env
+        echo "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}" >> digital-coach-app/.env
+        echo "${{ secrets.FIREBASE_ADMIN_SDK_BASE64 }}" | base64 -d > mlapi/digital-coach-firebase-adminsdk.json
+
+    - name: Start Docker Compose
+      run: docker compose up -d
+
+    - name: Wait for Web App to be ready
+      run: |
+        # wait for frontend, auth (9099), firestore (8080), storage (9199)
+        npx wait-on --timeout 300000 http://localhost:3000 tcp:9099 tcp:8080 tcp:9199
+
+    - name: Run Playwright tests
+      run: npx playwright test
+
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
+    - name: Dump Docker Logs
+      if: failure()
+      run: docker compose logs

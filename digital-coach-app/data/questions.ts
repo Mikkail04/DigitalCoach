@@ -1,5 +1,4 @@
-import { TSubject } from "@App/lib/question/models";
-
+// These questions should be used to seed a database
 const questionsData: any[] = [
   {
     subject: "Business Accounting and Analytics",

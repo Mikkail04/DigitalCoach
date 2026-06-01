@@ -1,0 +1,247 @@
+// ==========================================
+// Color Variables
+// ==========================================
+$brand-navy: #0A192F; 
+$brand-orange: #FF7A00; 
+$text-light: #ffffff;
+$text-dark: #1A1A1A;
+$border-radius-main: 16px;
+
+// ==========================================
+// Page Layout
+// ==========================================
+.pageContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.videoAndButtonContainer {
+  width: 100%;
+  max-width: 1500px; // this affects the videos' width
+}
+
+// ==========================================
+// Video Conference Grid (Side-by-Side)
+// ==========================================
+.videoContainer {
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Two equal columns
+  gap: 2rem;
+  width: 100%;
+  align-items: start; // Prevents the AI avatar column from stretching to match the button column
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr; // Stacks vertically on smaller screens
+  }
+}
+
+// Wraps the individual sides (User side vs Avatar side)
+.videoBox {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; // Space between the video card and the start recording button
+  width: 100%;
+  min-width: 0; // Prevents the video's width from breaking the grid column
+}
+
+// ==========================================
+// Video Component Cards
+// ==========================================
+.videoCard {
+  background-color: $brand-navy;
+  border-radius: $border-radius-main;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 65vh; // Forces both video boxes to be exactly this height
+  min-height: 550px;
+  box-shadow: 0 10px 30px rgba($brand-navy, 0.15);
+  border: 3px solid transparent;
+  transition: border-color 0.3s ease;
+
+  &:hover {
+    border-color: rgba($brand-orange, 0.5);
+  }
+}
+
+// Header styling for the names/controls above the video
+.videoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background-color: darken($brand-navy, 5%);
+  color: $text-light;
+  font-weight: 600;
+
+  p {
+    margin: 0;
+  }
+}
+
+// Container that holds the actual <video> element
+.videoContent {
+  // "1 1 0%" forces it to calculate height strictly based on the parent (.videoCard) rather than the child (<video>)
+  flex: 1 1 0%; 
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #000;
+  overflow: hidden; // Clips the video if it tries to render outside the boundaries
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; // Scales the video smoothly to fill the box without distorting the aspect ratio
+  }
+}
+
+// Fallback when camera/avatar is off
+.cameraOff {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: rgba($text-light, 0.6);
+  gap: 1rem;
+
+  // Targets the Lucide-React <VideoOff /> icon
+  svg {
+    width: 64px; 
+    height: 64px;
+    stroke-width: 1.5; // Slightly thinned out the lines so it looks better at a large size
+  }
+
+  // Targets the text accompanying the VideoOff icon
+  p {
+    font-size: 1.5rem; // Makes the text significantly larger
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: 0.5px; // Adds a tiny bit of space between letters for readability
+  }
+}
+
+.cameraErr {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba($brand-orange, 0.1); // Soft orange tint
+  border: 1px solid $brand-orange;
+  color: darken($brand-orange, 10%); // Slightly darkened for better text readability on white
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1rem; // Space between the error and the timer/video
+  width: 100%;
+
+  // Targets the Lucide <CircleAlert /> icon
+  svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0; // Prevents the icon from squishing if the text wraps
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+}
+
+// The session countdown timer
+.timerDisplay {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: $brand-navy;
+  margin: 0 0 1rem 0; // Pushes the video card down
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; // Aligns the timer to the left side
+  width: 100%;
+  transition: color 0.3s ease;
+}
+
+.timerWarning {
+  color: $brand-orange;
+  animation: pulseWarning 1.5s infinite; // run pulsing effect 
+}
+
+
+// animation for when timer is running out, pulsing effect
+@keyframes pulseWarning {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+// ==========================================
+// Controls & Buttons
+// ==========================================
+.controls {
+  display: flex;
+  gap: 10px;
+
+  button {
+    background: transparent;
+    border: none;
+    color: $text-light;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    padding: 4px;
+
+    &.enabled {
+      color: $text-light;
+    }
+    
+    &.disabled {
+      color: rgba($text-light, 0.4);
+    }
+
+    &:hover:not(:disabled) {
+      color: $brand-orange;
+    }
+  }
+}
+
+// Positions the button directly underneath the video
+.buttonBox {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.startButton {
+  font-family: inherit;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  background-color: $brand-orange;
+  color: $text-light;
+  text-decoration: none; 
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 12px rgba($brand-orange, 0.3);
+
+  &:hover:not(:disabled) {
+    background-color: darken($brand-orange, 8%);
+    transform: translateY(-2px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background-color: rgba($brand-navy, 0.1);
+    color: rgba($text-dark, 0.4);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,536 @@
+{
+  "info": {
+    "_postman_id": "dc-api-collection-001",
+    "name": "DigitalCoach API",
+    "description": "API collection for the DigitalCoach interview coaching platform. This FastAPI backend provides video analysis, audio sentiment analysis, STAR method feedback, and HeyGen AI avatar integration.\n\n## Base URL\nSet the `{{baseUrl}}` variable in your environment (e.g., `http://localhost:8000`).\n\n## Job-Based Architecture\nMost analysis endpoints follow an async job pattern:\n1. POST to start a job → returns `job_id`\n2. GET with `job_id` to poll status until `completed` or `failed`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "default"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "description": "Basic health check and status endpoints",
+      "item": [
+        {
+          "name": "Root - Welcome",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Root endpoint returning a welcome message. Use this to verify the API is running."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Jobs",
+      "description": "Generic job status polling endpoints",
+      "item": [
+        {
+          "name": "Get Job Results",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Response contains job_id and status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('job_id');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('Status is a valid job status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const validStatuses = ['pending', 'processing', 'completed', 'failed'];",
+                  "    pm.expect(validStatuses).to.include(jsonData.status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/jobs/results/:job_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "jobs", "results", ":job_id"],
+              "variable": [
+                {
+                  "key": "job_id",
+                  "value": "",
+                  "description": "The unique job identifier returned when starting a job"
+                }
+              ]
+            },
+            "description": "Poll the status and results of any job by its ID. Returns job status (pending, processing, completed, failed) and results when complete."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Create Answer (Video Analysis)",
+      "description": "Endpoints for comprehensive video interview analysis including prediction scoring, sentiment analysis, keyword extraction, and competency feedback.",
+      "item": [
+        {
+          "name": "Start Create Answer Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Response contains job_id', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('job_id');",
+                  "});",
+                  "",
+                  "pm.test('Response contains status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_url\": \"https://example.com/interview-video.mp4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/create_answer/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "create_answer", ""]
+            },
+            "description": "Start a comprehensive video analysis job. Analyzes the interview video for:\n- Prediction score (0-100)\n- Overall sentiment\n- Top 5 keywords with timestamps\n- Full transcript\n- Competency feedback (communication clarity, confidence, engagement)\n- Aggregate score\n\n**Request Body:**\n- `video_url` (required): Valid HTTP URL to the video file"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Create Answer Job Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Response contains job_id and status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('job_id');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('Status is a valid job status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const validStatuses = ['pending', 'processing', 'completed', 'failed'];",
+                  "    pm.expect(validStatuses).to.include(jsonData.status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/create_answer/:job_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "create_answer", ":job_id"],
+              "variable": [
+                {
+                  "key": "job_id",
+                  "value": "",
+                  "description": "Job ID returned from POST /api/create_answer/"
+                }
+              ]
+            },
+            "description": "Poll the status of a create_answer job. Returns:\n- `job_id`: The job identifier\n- `status`: pending | processing | completed | failed\n- `result`: CreateAnswerEvaluation object when completed\n- `error`: Error message if failed"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "STAR Feedback",
+      "description": "Endpoints for STAR (Situation, Task, Action, Result) method analysis of interview responses.",
+      "item": [
+        {
+          "name": "Analyze STAR Feedback",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Response contains job_id', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('job_id');",
+                  "});",
+                  "",
+                  "pm.test('Response contains status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"In my previous role as a project manager, I faced a situation where our team was behind schedule on a critical deliverable. My task was to get us back on track within two weeks. I reorganized the team's priorities and implemented daily standups. As a result, we delivered the project on time and received positive feedback from the client.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/star_feedback/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "star_feedback", "analyze"]
+            },
+            "description": "Start a STAR method analysis job on interview text. Analyzes the response for:\n- Whether it fulfills STAR criteria\n- Percentage breakdown of each component (Situation, Task, Action, Result)\n- Sentence-by-sentence classification\n- Feedback suggestions\n\n**Request Body:**\n- `text` (required): The interview response text to analyze"
+          },
+          "response": []
+        },
+        {
+          "name": "Get STAR Feedback Job Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Response contains job_id and status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('job_id');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('Status is a valid job status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const validStatuses = ['pending', 'processing', 'completed', 'failed'];",
+                  "    pm.expect(validStatuses).to.include(jsonData.status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/star_feedback/:job_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "star_feedback", ":job_id"],
+              "variable": [
+                {
+                  "key": "job_id",
+                  "value": "",
+                  "description": "Job ID returned from POST /api/star_feedback/analyze"
+                }
+              ]
+            },
+            "description": "Poll the status of a STAR feedback analysis job. Returns:\n- `job_id`: The job identifier\n- `status`: pending | processing | completed | failed\n- `result`: StarFeedbackEvaluation object when completed\n- `error`: Error message if failed"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Audio Analysis",
+      "description": "Endpoints for audio sentiment analysis, keyword extraction, and IAB category detection using AssemblyAI.",
+      "item": [
+        {
+          "name": "Start Audio Analysis Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Response contains job_id', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('job_id');",
+                  "});",
+                  "",
+                  "pm.test('Response contains status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"video_url\": \"https://example.com/interview-video.mp4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/audio_analysis/",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "audio_analysis", ""]
+            },
+            "description": "Start an audio analysis job on a video file. Extracts and analyzes audio for:\n- Full transcript\n- Sentiment analysis per segment (POSITIVE, NEUTRAL, NEGATIVE with confidence scores)\n- Auto-highlighted keywords with importance ranking and timestamps\n- IAB category detection with relevance scores\n- Audio duration\n\n**Request Body:**\n- `video_url` (required): Valid HTTP URL to the video file"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audio Analysis Job Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Response contains job_id and status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('job_id');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('Status is a valid job status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const validStatuses = ['pending', 'processing', 'completed', 'failed'];",
+                  "    pm.expect(validStatuses).to.include(jsonData.status);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/audio_analysis/:job_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "audio_analysis", ":job_id"],
+              "variable": [
+                {
+                  "key": "job_id",
+                  "value": "",
+                  "description": "Job ID returned from POST /api/audio_analysis/"
+                }
+              ]
+            },
+            "description": "Poll the status of an audio analysis job. Returns:\n- `job_id`: The job identifier\n- `status`: pending | processing | completed | failed\n- `result`: AudioAnalysisResult object when completed\n- `error`: Error message if failed"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "HeyGen Integration",
+      "description": "Endpoints for HeyGen AI avatar interview sessions.",
+      "item": [
+        {
+          "name": "Start HeyGen Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "pm.test('Response contains session_url', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('session_url');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"avatar_id\": \"dd73ea75-1218-4ef3-92ce-606d5f7fbc0a\",\n  \"voice_id\": \"c2527536-6d1f-4412-a643-53a3497dada9\",\n  \"context_id\": \"595268c3-a4cf-499d-bf85-efd006fe8a47\",\n  \"is_sandbox\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/heygen/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "heygen", "start"]
+            },
+            "description": "Start a HeyGen LiveAvatar interview session. Creates an AI-powered avatar for conducting mock interviews.\n\n**Request Body (all optional with defaults):**\n- `avatar_id`: HeyGen avatar appearance ID\n- `voice_id`: HeyGen voice ID for the avatar\n- `context_id`: HeyGen knowledge context ID\n- `is_sandbox`: Toggle sandbox mode (default: false)\n\n**Response:**\n- `session_url`: URL to connect to the created HeyGen LiveAvatar session"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Server Utilities",
+      "description": "Server utility and testing endpoints.",
+      "item": [
+        {
+          "name": "Test Firestore Connection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 2xx', function () {",
+                  "    pm.response.to.be.success;",
+                  "});",
+                  "",
+                  "pm.test('Response is valid JSON', function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/server/firestore/",
+              "host": ["{{baseUrl}}"],
+              "path": ["server", "firestore", ""]
+            },
+            "description": "Test endpoint to verify Firestore read/write operations are working correctly. Used for debugging Firebase connectivity."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

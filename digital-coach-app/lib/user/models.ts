@@ -22,13 +22,14 @@ export enum EUserProficiencies {
 }
 
 export interface IBaseUserAttributes {
-  avatarUrl: string;
+  avatarURL: string;
   name: string;
   concentration: EUserConcentrations | null;
   proficiency: EUserProficiencies | null;
 }
 
 export interface IUser extends IBaseUserAttributes {
+  id: string | null;
   email: string;
   registrationCompletedAt: Timestamp | null;
   createdAt: Timestamp;

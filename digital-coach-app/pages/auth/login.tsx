@@ -1,6 +1,6 @@
 import { SubmitHandler, useForm } from "react-hook-form";
 import Button from "@App/components/atoms/Button";
-import useAuthContext from "@App/lib/auth/AuthContext";
+import { useAuth } from "@App/lib/auth/AuthContextProvider";
 import styles from "@App/styles/LoginPage.module.scss";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -9,6 +9,7 @@ import UnAuthGuard from "@App/lib/auth/UnAuthGuard";
 import { TextField } from "@App/components/molecules/TextField";
 import LoginIcon from "@mui/icons-material/Login";
 import CenteredComponent from "@App/components/atoms/CenteredComponent";
+import { useEffect } from "react";
 
 interface LoginFormInputs {
   email: string;
@@ -22,17 +23,22 @@ const inputValidationSchema = yup
       .email("Must be a valid email")
       .max(255)
       .required("Email is required"),
-    password: yup.string().max(255).required("Password is required"),
+    password: yup.string().min(8).max(16).required("Password is required"),
   })
   .required();
 
 export default function LoginPage() {
+
   const {
     error: authError,
-    currentUser,
-    // loginWithGoogle,
+    clearError,
     login,
-  } = useAuthContext();
+  } = useAuth();
+
+  useEffect(() => {
+    clearError();
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -43,42 +49,62 @@ export default function LoginPage() {
   });
 
   const onSubmit: SubmitHandler<LoginFormInputs> = (data: LoginFormInputs) => {
+    clearError();
     const { email, password } = data;
     login(email, password);
   };
 
   return (
     <UnAuthGuard>
-      <CenteredComponent>
+      <CenteredComponent className={styles.loginContainer}>
         <div className={styles.loginBox}>
-          <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+          <div className={styles.header}>
             <div className={styles.logo}>
-              <h1>Digital Coach</h1>
+              <div className={styles.logoBadge}>DC</div>
             </div>
-            <h2>Login</h2>
-            {authError && (
-              <p className={styles.issue}>
-                username and password did not match
+            <h1>Digital Coach</h1>
+            <p className={styles.subtitle}>AI-powered mock interview platform</p>
+          </div>
+
+          <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+            <div className={styles.titleBlock}>
+              <h2>Login</h2>
+              <p className={styles.helperText}>
+                Sign in with your email and password to continue your practice.
               </p>
-            )}
-            <h3>Email</h3>
-            <TextField type="email" placeholder="" {...register("email")} />
-            {formError.email && <span>{formError.email.message}</span>}
-            <h3>Password</h3>
-            <TextField
-              type="password"
-              autoComplete="on"
-              placeholder=""
-              {...register("password")}
-            />
-            {formError.password && <span>{formError.password.message}</span>}
+            </div>
+
+            {authError && <p className={styles.issue}>{authError}</p>}
+
+            <div className={styles.fieldGroup}>
+              <h3>Email</h3>
+              <TextField type="email" placeholder="" {...register("email")} />
+              {formError.email && (
+                <p className={styles.issue}>{formError.email.message}</p>
+              )}
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <h3>Password</h3>
+              <TextField
+                type="password"
+                autoComplete="on"
+                placeholder=""
+                {...register("password")}
+              />
+              {formError.password && (
+                <p className={styles.issue}>{formError.password.message}</p>
+              )}
+            </div>
 
             <Button type="submit">
               <LoginIcon />
               Login
             </Button>
-            {/* <Button onClick={loginWithGoogle}>Login with Google</Button> */}
-            <Link href="/auth/signup">New user? sign up</Link>
+
+            <p className={styles.footerText}>
+              New user? <Link href="/auth/signup">Create an account</Link>
+            </p>
           </form>
         </div>
       </CenteredComponent>

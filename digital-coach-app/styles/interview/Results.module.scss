@@ -1,0 +1,345 @@
+// ==========================================
+// Color Palette & Gradients
+// ==========================================
+$navy-blue: #0A192F;
+$navy-light: #112240;
+$navy-lighter: #1d3557;
+$orange: #FF6B35;
+$orange-light: #FF8E53;
+$white: #FFFFFF;
+$text-dark: #333333;
+$text-muted: #6B7280;
+$border-color: #E5E7EB;
+
+// Gradients
+$gradient-navy: linear-gradient(135deg, $navy-blue 0%, $navy-lighter 100%);
+$gradient-orange: linear-gradient(135deg, $orange 0%, $orange-light 100%);
+$gradient-card: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+
+// ==========================================
+// Page Layout
+// ==========================================
+.performanceResults {
+  min-height: 100vh;
+  padding: 3rem 2rem;
+  font-family: inherit;
+  display: flex;
+  justify-content: center;
+}
+
+.resultsContainer {
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem; // Space between Top Score, Metrics Grid, and Buttons
+}
+
+// ==========================================
+// Top Section: Overall Score Banner
+// ==========================================
+.overallScore {
+  background: $gradient-navy;
+  border-radius: 24px;
+  padding: 4rem 2rem;
+  color: $white;
+  text-align: center;
+  box-shadow: 0 15px 30px -10px rgba(10, 25, 47, 0.4);
+  position: relative;
+  overflow: hidden;
+
+  // Decorative subtle glow effect behind the score
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 107, 53, 0.15) 0%, rgba(255, 107, 53, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-bottom: 2.5rem;
+    letter-spacing: -0.5px;
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.scoreDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.scoreValue {
+  background: $gradient-orange;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4.5rem;
+  font-weight: 800;
+  color: $white;
+  box-shadow: 0 10px 20px rgba(255, 107, 53, 0.3), inset 0 -4px 10px rgba(0, 0, 0, 0.1);
+  border: 4px solid rgba(255, 255, 255, 0.1);
+}
+
+.scoreLabel {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.metadata {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.metadataItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: $orange-light;
+  }
+}
+
+// ==========================================
+// Overall AI Feedback Section
+// ==========================================
+
+.overallFeedback {
+  background: $white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border-left: 6px solid $orange; // Ties into your gradient-orange accents
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 10px 15px -3px rgba(10, 25, 47, 0.08);
+  }
+}
+
+.feedbackHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: $navy-blue;
+    font-weight: 700;
+  }
+}
+
+.feedbackIcon {
+  color: $orange;
+  width: 24px;
+  height: 24px;
+}
+
+.feedbackContent {
+  p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: $text-dark;
+    margin: 0;
+  }
+}
+
+
+// ==========================================
+// Middle Section: 4 Metrics Horizontally
+// ==========================================
+.metricsGrid {
+  display: grid;
+  // Forces 4 columns on large screens
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+
+  // Responsive fallback for smaller screens
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metricCard {
+  background: $gradient-card;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border-top: 4px solid $orange;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(10, 25, 47, 0.1);
+  }
+}
+
+.metricHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metricIcon {
+  background: rgba($orange, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $orange;
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.metricInfo {
+  h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $navy-blue;
+  }
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.scoreBadge {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+
+  .scoreText {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: $navy-blue;
+    // Uses background-clip to create gradient text
+    background: $gradient-navy;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.feedbackText {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: $text-dark;
+  flex-grow: 1; // Pushes content down evenly if text lengths vary
+}
+
+// ==========================================
+// Bottom Section: Action Buttons
+// ==========================================
+.actionButtons {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  
+  @media (max-width: 600px) {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  button {
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    @media (max-width: 600px) {
+      width: 100%;
+    }
+  }
+}
+
+.practiceButton {
+  background: $gradient-orange;
+  color: $white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 107, 53, 0.4);
+    filter: brightness(1.05);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.viewHistory {
+  background: $white;
+  color: $navy-blue;
+  border: 2px solid $border-color;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    border-color: $navy-blue;
+    color: $navy-light;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(10, 25, 47, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
