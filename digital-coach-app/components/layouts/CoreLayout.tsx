@@ -17,7 +17,7 @@ export default function CoreLayout({ children }: PropsWithChildren<{}>) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className={styles.page_container}>
+      <div className={styles.pageContainer}>
         {auth.userData && <NavBar />}
         <div className={styles.container}>
           <Head>

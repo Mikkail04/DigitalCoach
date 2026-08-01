@@ -32,14 +32,25 @@ import { IUser } from "@App/lib/user/models";
 import { getUser, createUser } from "@App/lib/user/UserService";
 
 // define the shape of our authentication context
+// interface AuthContextType {
+//     user: User | null; // Firebase Auth user
+//     userData : IUser | null; // Firebase Firestore user profile
+//     loading: boolean; // flag used when checking if user is logged in, i.e. tells the app to "wait" until firebase is done verifying whether user is logged in
+//     login: (email: string, pass: string) => Promise<void>; // user login function
+//     signup: (email: string, pass: string) => Promise<void>; // user signup function
+//     logout: () => Promise<void>;
+//     error: string | null; // user logout function
+//     clearError: () => void;
+// }
 interface AuthContextType {
-    user: User | null; // Firebase Auth user
-    userData : IUser | null; // Firebase Firestore user profile
-    loading: boolean; // flag used when checking if user is logged in, i.e. tells the app to "wait" until firebase is done verifying whether user is logged in
-    login: (email: string, pass: string) => Promise<void>; // user login function
-    signup: (email: string, pass: string) => Promise<void>; // user signup function
+    user: User | null;
+    userData: IUser | null;
+    loading: boolean;
+    userDataLoading: boolean;
+    login: (email: string, pass: string) => Promise<void>;
+    signup: (email: string, pass: string) => Promise<void>;
     logout: () => Promise<void>;
-    error: string | null; // user logout function
+    error: string | null;
     clearError: () => void;
 }
 
@@ -82,26 +93,44 @@ export function AuthProvider({ children }: {children: ReactNode}) {
   const [userData, setUserData] = useState<IUser | null>(null); // firebase firestore user identity
   const [loading, setLoading] = useState(true); // before redirects, wait and check if user is logged in
   const [error, setError] = useState<string>("");
+  const [userDataLoading, setUserDataLoading] = useState(true);
 
   useEffect(() => {
     // Listener performs session handling, i.e. checks whether user is logged in. This is called whenever authentication state has changed
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         setUser(firebaseUser); // update firebase authentication as soon as authentication state changes
     
-        if (firebaseUser) {
-            // logged in, retrieve user data from firestore
-            try {
-                const userData = await getUser(firebaseUser.uid);
-                // cast user data as our defined IUser model
-                setUserData(userData as IUser);
+        // if (firebaseUser) {
+        //     // logged in, retrieve user data from firestore
+        //     try {
+        //         const userData = await getUser(firebaseUser.uid);
+        //         // cast user data as our defined IUser model
+        //         setUserData(userData as IUser);
 
-            } catch (e) {
-                console.error("Error fetching user profile", e);
-            }
-        } else {
-            // not logged in
-            setUserData(null);
-        }
+        //     } catch (e) {
+        //         console.error("Error fetching user profile", e);
+        //     }
+        // } else {
+        //     // not logged in
+        //     setUserData(null);
+        // }
+        if (firebaseUser) {
+    setUserDataLoading(true);
+
+    try {
+        const userData = await getUser(firebaseUser.uid);
+        setUserData(userData as IUser);
+    } catch (e) {
+        console.error("Error fetching user profile", e);
+        setUserData(null);
+    } finally {
+        setUserDataLoading(false);
+    }
+}
+else {
+    setUserData(null);
+    setUserDataLoading(false);
+}
         setLoading(false); // we're done verifying whether user is logged in
     });
     return () => unsubscribe();
@@ -127,21 +156,40 @@ export function AuthProvider({ children }: {children: ReactNode}) {
   /**
    * Handles user signup.
    */
-  const signup = async (email: string, pass: string) => {
-    setError(""); // set error to empty
+//   const signup = async (email: string, pass: string) => {
+//     setError(""); // set error to empty
+//     try {
+//         email = email.trim();
+//         pass = pass.trim();
+//         const cred = await createUserWithEmailAndPassword(auth, email, pass);
+//         // create new user in Firestore
+//         await createUser(cred.user);
+
+//         // onAuthStateChanged will handle updating userData
+//     } catch (e: any) {
+//         setError(getAuthErrorMessage(e));
+//     }
+//   };
+const signup = async (email: string, pass: string) => {
+    setError("");
+
     try {
         email = email.trim();
         pass = pass.trim();
-        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-        // create new user in Firestore
+
+        const cred = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            pass
+        );
+
         await createUser(cred.user);
 
-        // onAuthStateChanged will handle updating userData
     } catch (e: any) {
         setError(getAuthErrorMessage(e));
+        throw e;
     }
-  };
-
+};
   /**
    * Handles user logout.
    */
@@ -170,6 +218,7 @@ export function AuthProvider({ children }: {children: ReactNode}) {
     logout,
     error,
     clearError,
+    userDataLoading,
   };
 
   return <AuthContext.Provider value={value}>

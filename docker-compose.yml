@@ -15,19 +15,37 @@ services:
         - NEXT_PUBLIC_FIREBASE_APP_ID
         - NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     # Put secrets in the container environment as they're for runtime use
+    # environment:
+    #   - NODE_ENV=development # Set Node environment to development to do things like enable emulators
+    #   - WATCHPACK_POLLING=true
+    #   - CHOKIDAR_USEPOLLING=true
+    #   - WATCHPACK_POLLING_INTERVAL=1000
+    #   # new
+    #   - CHOKIDAR_INTERVAL=3000
+    #   - NODE_OPTIONS=--max-old-space-size=4096
+    # # Required so changes are reflected in Next.js without restarting the container
+    #   - WATCHPACK_POLLING=true
+    #   - CHOKIDAR_USEPOLLING=true
     environment:
-      - NODE_ENV=development # Set Node environment to development to do things like enable emulators
-    # Required so changes are reflected in Next.js without restarting the container
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
       - WATCHPACK_POLLING=true
+      - WATCHPACK_POLLING_INTERVAL=3000
       - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=3000
     env_file:
       - ./digital-coach-app/.env # load environment variables from .env file (this is specifically for HeyGen API key. TEMPORARY: use environment directive above after env files have been consolidated to the root folder)
+    # volumes:
+    #   # Mount the frontend code for live development
+    #   - ./digital-coach-app:/app
+    #   - /app/node_modules # Preserve node_modules inside the container
+    #   - /app/.next
     volumes:
-      # Mount the frontend code for live development
       - ./digital-coach-app:/app
-      - /app/node_modules # Preserve node_modules inside the container
-      - /app/.next
-    command: yarn dev # Start the Next.js development server
+      - frontend-node_modules:/app/node_modules
+      - frontend-next:/app/.next
+    #command: yarn dev # Start the Next.js development server
+    command: sh -c "WATCHPACK_POLLING=true yarn dev"
     ports:
       # Expose port 3000 for the frontend
       - "3000:3000"
@@ -82,8 +100,8 @@ services:
       - ./digital-coach-firebase-adminsdk.json:/secrets/firebase-admin.json:ro
       - ./mlapi/data/interviews:/app/data/interviews
     command: uvicorn main:app --host 0.0.0.0 --port 8000 # Start the API for development, use --reload for auto-reload but its CPU intensive. This overrides the default CMD in the Dockerfile which is meant for production.
-    models: 
-      - llm # our backend will use the LLM for tasks like sentiment analysis and feedback generation
+    #models: 
+    #  - llm # our backend will use the LLM for tasks like sentiment analysis and feedback generation
     depends_on:
       - redis # Ensure Redis is started before the API
       - firebase # Ensure firebase starts before the backend tries to connect to it
@@ -109,6 +127,9 @@ services:
       - redis
     environment:  
       - WORKERS_COUNT=3
+      - LM_BASE_URL=http://model-runner.docker.internal/engines/v1
+      - LM_API_KEY=dummy
+      - MODEL=ai/qwen3:4B-UD-Q4_K_XL
       # Remove these emulator variables if you want to use the real services
       - FIRESTORE_EMULATOR_HOST=firebase:8080 # connect to Firestore emulator
       - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099 # connect Authentication emulator
@@ -123,7 +144,8 @@ services:
     networks:
       - app-network
     deploy:
-      replicas: 2
+      #replicas: 2
+      replicas: 1
 
   # Default worker for other tasks
   default-worker:
@@ -133,6 +155,9 @@ services:
       - redis
     environment:  
       - WORKERS_COUNT=3
+      - LM_BASE_URL=http://model-runner.docker.internal/engines/v1
+      - LM_API_KEY=dummy
+      - MODEL=ai/qwen3:4B-UD-Q4_K_XL
       # Remove these emulator variables if you want to use the real services
       - FIRESTORE_EMULATOR_HOST=firebase:8080 # connect to Firestore emulator
       - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099 # connect Authentication emulator
@@ -147,7 +172,8 @@ services:
     networks:
       - app-network
     deploy:
-      replicas: 3
+      #replicas: 3
+      replicas: 1
 
   # Worker monitor service
   # monitor:
@@ -169,8 +195,10 @@ networks:
 
 volumes:
   redis-data:
+  frontend-node_modules:
+  frontend-next:
 
-models:
-  llm:
-    model: ai/qwen3:4B-UD-Q4_K_XL # LLM model we're using
-    context_size: 8192 # context size (how much many tokens the model can process at any given time which includes your prompt and the LLM's response), each model has their own max size you can check using `docker model inspect <model name>` (make this smaller if you experience out of memory errors but there needs to be enough context for the LLM to make detailed responses)
+# models:
+#   llm:
+#     model: ai/qwen3:4B-UD-Q4_K_XL # LLM model we're using
+#     context_size: 8192 # context size (how much many tokens the model can process at any given time which includes your prompt and the LLM's response), each model has their own max size you can check using `docker model inspect <model name>` (make this smaller if you experience out of memory errors but there needs to be enough context for the LLM to make detailed responses)

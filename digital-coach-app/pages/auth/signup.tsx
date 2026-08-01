@@ -62,7 +62,7 @@ export default function SignUpPage() {
       await signup(email, password);
       clearError();
       // navigate to register page after signup
-      router.push("/auth/register");
+      router.push("/auth/profile/setup");
     } catch (error) {
       console.error("Signup failed:", error);
     }

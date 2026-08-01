@@ -29,12 +29,21 @@
     color: rgba(0, 0, 0, 0.7);
   }
 }
-
+// .hero {
+//   position: relative;
+//   z-index: 1;
+// }
 .hero {
   border-radius: 1.25rem;
   padding: 2rem 1.75rem;
   background: linear-gradient(135deg, $primary 30%, $secondary 70%);
   color: $light-text;
+}
+
+@media (max-width: 2000px) {
+  .Home {
+    padding-top: 80px;
+  }
 }
 
 .heroContent {
@@ -76,6 +85,19 @@
     color 0.15s ease;
 }
 
+// .primaryCta {
+//   position: relative;
+//   z-index: 9999;
+
+//   background-color: $secondary;
+//   color: $light-text;
+//   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+
+//   &:hover {
+//     background-color: $secondary-light;
+//     transform: translateY(-1px);
+//   }
+// }
 .primaryCta {
   background-color: $secondary;
   color: $light-text;

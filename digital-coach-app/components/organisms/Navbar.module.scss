@@ -54,3 +54,134 @@
   min-width: 300px;
   box-sizing: border-box;
 }
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobileMenuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.mobileLogout {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .main {
+    max-width: 100%;
+    min-width: 100%;
+  }
+
+  .barcontainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    max-width: none;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 1rem;
+
+    z-index: 2000;
+  }
+
+  .mobileMenuButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: transparent;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+
+  .logout {
+    display: none;
+  }
+
+  .links {
+    display: none;
+  }
+
+  .mobileMenuOpen {
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+
+  background: $primary;
+
+  padding: 1rem;
+
+  box-sizing: border-box;
+
+  gap: 1rem;
+}
+
+  .linksText {
+    margin: 1rem 0;
+  }
+
+  .mobileLogout {
+    display: flex;
+    margin-top: 1rem;
+  }
+}
+
+.main {
+  width: 300px;
+  transition: width 0.3s ease;
+}
+
+.main.closed {
+  width: 80px;
+}
+
+.main.open {
+  width: 300px;
+}
+
+
+.barcontainer {
+  width: 300px;
+  transition: width 0.3s ease;
+}
+
+
+.closed .barcontainer {
+  width: 80px;
+}
+
+
+.closed .linksText,
+.closed .logout div {
+  display: none;
+}
+
+
+.closed .logo_text {
+  font-size: 0;
+}
+
+
+.closed .logo_text::after {
+  content: "DC";
+  font-size: 28px;
+}

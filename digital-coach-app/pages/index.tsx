@@ -4,16 +4,25 @@ import { useAuth } from "@App/lib/auth/AuthContextProvider";
 import AuthGuard from "@App/lib/auth/AuthGuard";
 import styles from "@App/styles/Home.module.scss";
 import Card from "@App/components/atoms/Card";
-import IssuesChart from "@App/components/molecules/IssuesChart";
+//import IssuesChart from "@App/components/molecules/IssuesChart";
+import dynamic from "next/dynamic";
 import { TrendingUp, Award, Target, Video, History } from "lucide-react";
 // import ScoreChart from "@App/components/molecules/ScoreChart";
-import PracticeCalendar from "@App/components/molecules/PracticeCalendar";
+//import PracticeCalendar from "@App/components/molecules/PracticeCalendar";
 // import useGetFeaturedQuestionSets from "@App/lib/questionSets/useGetFeaturedQuestionSets";
 import Link from "next/link";
 // import useGetUserAverageScore from "@App/lib/interviewQuestion/useGetUserAverageScore";
 // import useFetchUserInterviews from "@App/lib/interview/useFetchUserInterviews";
 // import useGetAnswersByUserId from "@App/lib/answer/useGetAnswerByUserId";
 // import seed from "@App/pages/api/seed";
+
+const IssuesChart = dynamic(
+  () => import("@App/components/molecules/IssuesChart"),
+  {
+    ssr: false,
+    loading: () => <div>Loading chart...</div>,
+  }
+);
 
 const Home: NextPage = () => {
   const { user, userData } = useAuth();
@@ -38,6 +47,8 @@ const Home: NextPage = () => {
   // } = useGetUserAverageScore(user?.uid);
 
   const [tip, setTips] = useState("");
+  const [heygenToken, setHeygenToken] = useState<string | null>(null);
+  const [isCreatingSession, setIsCreatingSession] = useState(true);
 
   useEffect(() => {
     const tips = [
@@ -62,6 +73,32 @@ const Home: NextPage = () => {
     setTips(tips[randInd]);
   }, []);
 
+  useEffect(() => {
+  async function preloadHeyGen() {
+    try {
+      setIsCreatingSession(true);
+
+      const host =
+        typeof window !== "undefined"
+          ? "localhost:8000"
+          : "api";
+
+      const response = await fetch(
+        `http://${host}/api/heygen/session_token`
+      );
+
+      const token = await response.json();
+
+      setHeygenToken(token);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsCreatingSession(false);
+    }
+  }
+
+  preloadHeyGen();
+}, []);
   // if (isLoading || isFetching) return <div>Loading...</div>;
 
   const mockIssuesData = [
@@ -112,16 +149,31 @@ const Home: NextPage = () => {
               Track your progress and improve your interview skills with personalized insights.
             </p>
             <div className={styles.heroActions}>
-              <Link href="/naturalconversation" className={styles.primaryCta}>
-                <Video size={20} />
-                <span>Start Mock Interview</span>
-              </Link>
-              <Link href="/progress" className={styles.secondaryCta}>
-              {/* TODO: Add a link to the interview history page */}
-                <History size={20} />
-                <span>View Interview History</span>
-              </Link>
-            </div>
+  {heygenToken ? (
+    <Link
+      href={{
+        pathname: "/naturalconversation",
+        query: {
+          token: heygenToken,
+        },
+      }}
+      className={styles.primaryCta}
+    >
+      <Video size={20} />
+      <span>Start Mock Interview</span>
+    </Link>
+  ) : (
+    <button disabled className={styles.primaryCta}>
+      <Video size={20} />
+      <span>Preparing Interview...</span>
+    </button>
+  )}
+
+  <Link href="/progress" className={styles.secondaryCta}>
+    <History size={20} />
+    <span>View Interview History</span>
+  </Link>
+</div>
           </div>
         </section>
 

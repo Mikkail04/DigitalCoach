@@ -224,52 +224,124 @@ function InteractiveAvatar({sessionToken, onTranscriptUpdate}: InteractiveAvatar
   const userConfig = {
     voiceChat: true,
   };
+  const sessionStartedRef = useRef(false);
+  const sessionStartingRef = useRef(false);
   
   /**
    * Starts HeyGen LiveAvatar session using the given session token and configurations. Recommend referring to the reviewing heygen/liveavatar-web-sdk library as API documentation is sparse as of writing this.
    */
-  const startSession = async () => {
-    console.log("Starting mock interview...");
-    // create new session
-    const session = new LiveAvatarSession(sessionToken, userConfig);
-    sessionRef.current = session;
-    // start the session
-    await session.start();
+  // const startSession = async () => {
+  //   console.log("Session started:", new Date().toISOString());
 
-    // register event listener for when the avatar talks so we can add it to the transcript
-    // the event returns the text that the avatar speaks so we don't have to use AssemblyAI for this
-    session.on(AgentEventsEnum.AVATAR_TRANSCRIPTION, ({text}) => {
-      if (onTranscriptUpdate) {
-        onTranscriptUpdate(`Interviewer: ${text}`, true);
-      }
-      // console.log(`Avatar said: ${text}\n`);
-    });
+  //   console.log("Starting mock interview...");
+  //   // create new session
+  //   const session = new LiveAvatarSession(sessionToken, userConfig);
+  //   sessionRef.current = session;
+  //   // start the session
+  //   await session.start();
 
-    // HeyGen LiveAvatar keeps a user transcription (we currently use AssemblyAI for transcription) 
-    // session.on(AgentEventsEnum.USER_TRANSCRIPTION, ({text}) => {
-    //   if (onTranscriptUpdate) {
-    //     onTranscriptUpdate(`User: ${text}`, true);
-    //   }
-    // })
+  //   // register event listener for when the avatar talks so we can add it to the transcript
+  //   // the event returns the text that the avatar speaks so we don't have to use AssemblyAI for this
+  //   session.on(AgentEventsEnum.AVATAR_TRANSCRIPTION, ({text}) => {
+  //     if (onTranscriptUpdate) {
+  //       onTranscriptUpdate(`Interviewer: ${text}`, true);
+  //     }
+  //     // console.log(`Avatar said: ${text}\n`);
+  //   });
+
+  //   // HeyGen LiveAvatar keeps a user transcription (we currently use AssemblyAI for transcription) 
+  //   // session.on(AgentEventsEnum.USER_TRANSCRIPTION, ({text}) => {
+  //   //   if (onTranscriptUpdate) {
+  //   //     onTranscriptUpdate(`User: ${text}`, true);
+  //   //   }
+  //   // })
 
 
     
-    // when video element is mounted, attach it to the session
+  //   // when video element is mounted, attach it to the session
+  //   if (videoRef.current) {
+  //     session.attach(videoRef.current);
+  //   }
+  // }
+  const startSession = async () => {
+  console.log("Starting session with token:", sessionToken);
+    console.log("sessionToken:", sessionToken);
+    console.log("sessionToken length:", sessionToken?.length);
+  // Prevent double-start while a request is already in flight
+  if (sessionStartingRef.current) {
+    console.log("Session is already starting");
+    return;
+  }
+
+  // Prevent creating a second session if one already exists
+  if (sessionRef.current) {
+    console.log("Session already exists");
+    return;
+  }
+
+  sessionStartingRef.current = true;
+
+  try {
+    console.log("Creating LiveAvatar session...");
+
+    const session = new LiveAvatarSession(
+      sessionToken,
+      userConfig
+    );
+
+    sessionRef.current = session;
+
+    await session.start();
+
+    console.log("Session started successfully");
+
+    sessionStartedRef.current = true;
+
+    session.on(AgentEventsEnum.AVATAR_TRANSCRIPTION, ({ text }) => {
+      if (onTranscriptUpdate) {
+        onTranscriptUpdate(`Interviewer: ${text}`, true);
+      }
+    });
+
     if (videoRef.current) {
       session.attach(videoRef.current);
     }
+  } catch (error) {
+    console.error("Session start failed:", error);
+
+    sessionRef.current = null;
+    sessionStartedRef.current = false;
+  } finally {
+    sessionStartingRef.current = false;
   }
+};
 
   /**
    * Stops HeyGen LiveAvatar Session.
    */
+  // const stopSession = async () => {
+  //   console.log("Session ended:", new Date().toISOString());
+
+  //   console.log("Stopping session...");
+  //   // stop session
+  //   if (sessionRef.current) {
+  //     await sessionRef.current.stop();
+  //   }
+  // }
   const stopSession = async () => {
-    console.log("Stopping session...");
-    // stop session
+  try {
     if (sessionRef.current) {
+      console.log("Stopping session...");
       await sessionRef.current.stop();
     }
+  } catch (error) {
+    console.error("Error stopping session:", error);
+  } finally {
+    sessionRef.current = null;
+    sessionStartedRef.current = false;
+    sessionStartingRef.current = false;
   }
+};
 
   useEffect(() => {
     // start session once session token is received

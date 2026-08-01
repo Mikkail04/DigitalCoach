@@ -898,7 +898,7 @@
             grid-template-columns: repeat(2, 1fr);
         }
     }
-    @media (max-width: 768px) {
+    @media (max-width: 2000px) {
         .tsd-index-panel .tsd-index-list {
             grid-template-columns: repeat(1, 1fr);
         }
@@ -1591,7 +1591,7 @@
     }
 
     /* two sidebars */
-    @media (min-width: 1200px) {
+    @media (min-width: 2000px) {
         .container-main {
             grid-template-columns:
                 minmax(0, 1fr) minmax(0, 2.5fr) minmax(

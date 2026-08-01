@@ -4,7 +4,8 @@ import AuthGuard from "@App/lib/auth/AuthGuard";
 // import { uploadAnswerVideo } from "@App/lib/storage/StorageService";
 import { v4 as uuidv4 } from "uuid";
 import styles from "@App/styles/interview/NaturalConversationPage.module.scss";
-import InteractiveAvatar from "@App/components/organisms/InteractiveAvatar";
+// import InteractiveAvatar from "@App/components/organisms/InteractiveAvatar";
+import dynamic from "next/dynamic";
 import VideoRecorder from "@App/components/video";
 import { useRouter } from "next/router";
 import { CircleAlert } from "lucide-react";
@@ -12,12 +13,21 @@ import { MAX_SESSION_TIME } from "@App/components/video";
 import { useAuth } from "@App/lib/auth/AuthContextProvider";
 import Spinner from "@App/components/atoms/Spinner";
 import { IInterview } from "@App/lib/interview/models";
+import toast from "react-hot-toast";
 type Role = "user" | "interviewer";
 interface Message {
   role: Role;
   text: string;
   timestamp: string;
 }
+
+const InteractiveAvatar = dynamic(
+  () => import("@App/components/organisms/InteractiveAvatar"),
+  {
+    ssr: false,
+    loading: () => <div>Loading Avatar...</div>,
+  }
+);
 
 const formatTimestamp = () =>
   new Date().toLocaleString("en-US", {
@@ -43,6 +53,11 @@ export default function NaturalConversationPage() {
   const [cameraError, setCameraError] = useState("");
   const { user } = useAuth();
   const router = useRouter();
+  useEffect(() => {
+  if (typeof router.query.token === "string") {
+    setHeyGenToken(router.query.token);
+  }
+}, [router.query.token]);
   const [fullTranscript, setFullTranscript] = useState(""); // transcript of the entire interview 
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
@@ -73,33 +88,158 @@ export default function NaturalConversationPage() {
   /**
    * Requests backend to get a session token from HeyGen LiveAvatar API.
    */
+  // const handleStartInterview = async () => {
+  //   // request heygen session token
+  //   console.log("Requesting Interview Session...");
+  //   setIsLoading(true);
+  //   setLoadingMessage("Requesting Interview Session...");
+  //   const host = typeof window !== "undefined" ? "localhost:8000" : "api"; // if we're in the browser use localhost, but if we're in Docker, use the backend's service name (currently 'api')
+  //   console.log(`Using ${host} for the host.`);
+  //   try {
+  //     const response = await fetch(`http://${host}/api/heygen/session_token`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     });
+  //     const data = await response.json();
+  //     if (response.ok) {
+  //       console.log("HeyGen token request successful!");
+  //       setHeyGenToken(data);
+  //     } else {
+  //       throw `Error: ${response.statusText || "Something went wrong"}`;
+  //     }
+  //   } catch (error) {
+  //       console.error(`Submission error: ${error}`);
+  //   } finally {
+  //       setIsLoading(false);
+  //   }
+  // };
+  // const handleStartInterview = async () => {
+  //   if (heygenToken) {
+  //   console.log("Using preloaded HeyGen token");
+  //   return;
+  //   }
+  //   // request heygen session token
+  //   console.log("Requesting Interview Session...");
+  //   setIsLoading(true);
+  //   setLoadingMessage("Requesting Interview Session...");
+  //   const host = typeof window !== "undefined" ? "localhost:8000" : "api"; // if we're in the browser use localhost, but if we're in Docker, use the backend's service name (currently 'api')
+  //   console.log(`Using ${host} for the host.`);
+  //   try {
+  //     const response = await fetch(`http://${host}/api/heygen/session_token`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //     });
+  //     const data = await response.json();
+  //     if (response.ok) {
+  //       console.log("HeyGen token request successful!");
+  //       setHeyGenToken(data);
+  //     } else {
+  //       throw `Error: ${response.statusText || "Something went wrong"}`;
+  //     }
+  //   } catch (error) {
+  //       console.error(`Submission error: ${error}`);
+  //   } finally {
+  //       setIsLoading(false);
+  //   }
+  // };
   const handleStartInterview = async () => {
-    // request heygen session token
-    console.log("Requesting Interview Session...");
-    setIsLoading(true);
-    setLoadingMessage("Requesting Interview Session...");
-    const host = typeof window !== "undefined" ? "localhost:8000" : "api"; // if we're in the browser use localhost, but if we're in Docker, use the backend's service name (currently 'api')
-    console.log(`Using ${host} for the host.`);
-    try {
-      const response = await fetch(`http://${host}/api/heygen/session_token`, {
+  if (heygenToken?.length > 0) {
+    console.log("Using preloaded HeyGen token");
+    return;
+  }
+
+  console.log("Requesting Interview Session...");
+  setIsLoading(true);
+  setLoadingMessage("Requesting Interview Session...");
+
+  const host =
+    typeof window !== "undefined"
+      ? "localhost:8000"
+      : "api";
+
+  try {
+    const response = await fetch(
+      `http://${host}/api/heygen/session_token`,
+      {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        console.log("HeyGen token request successful!");
-        setHeyGenToken(data);
-      } else {
-        throw `Error: ${response.statusText || "Something went wrong"}`;
       }
-    } catch (error) {
-        console.error(`Submission error: ${error}`);
-    } finally {
-        setIsLoading(false);
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setHeyGenToken(data);
     }
-  };
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+  const waitForAnalysis = async (jobId: string, interviewId: string) => {
+
+  const host =
+    typeof window !== "undefined"
+      ? "localhost:8000"
+      : "api";
+
+  const timeout = 120000; // 2 minutes
+  const start = Date.now();
+
+  //while (true) {
+  while (Date.now() - start < timeout) {
+
+    const response = await fetch(
+      `http://${host}/api/jobs/results/${jobId}`
+    );
+
+
+    const result = await response.json();
+    console.log("Job status:", result.status);
+
+    if (result.status === "success") {
+      console.log("ANALYSIS SUCCESS");
+      toast.success(
+  "Your interview analysis is complete!"
+);
+
+setTimeout(() => {
+  router.push(`/interviews/${interviewId}`);
+}, 3000);
+
+return;
+    }
+
+
+    if (result.status === "failed") {
+
+      toast.error(
+        "Analysis failed. Please try again."
+      );
+
+      return;
+    }
+
+
+    // check again after 3 seconds
+    await new Promise(
+      resolve => setTimeout(resolve, 3000)
+    );
+  }
+    toast.error(
+    "Analysis timed out. Please try again."
+  );
+
+};
 
   /**
    * Handle creating a new interview document within the user's collection of interviews using the interview's data like its duration.
@@ -121,6 +261,11 @@ export default function NaturalConversationPage() {
       sentiment: undefined,
       url: undefined,
     }
+
+    if (!user) {
+  toast.error("You must be logged in.");
+  return;
+}
 
     const req = {
       userId: user!.uid,
@@ -145,9 +290,48 @@ export default function NaturalConversationPage() {
       setIsLoading(false);
       return;
     }
-    setIsLoading(false); // turn submission loading screen off before we get to the loading screen for route changes
-    // reroute user to interview's webpage
-    router.push(`/interviews/${newInterview.id}`);
+
+    const data = await response.json();
+
+console.log("Analysis job started:", data.job_id);
+
+//setIsLoading(false);
+
+setLoadingMessage("Analyzing your interview...");
+// Wait until analysis finishes before moving to results page
+// await waitForAnalysis(
+//   data.job_id,
+//   newInterview.id
+// );
+
+// setIsLoading(false);
+try {
+
+ await waitForAnalysis(
+   data.job_id,
+   newInterview.id
+ );
+
+}
+catch(error){
+
+ toast.error(
+   "Something went wrong."
+ );
+
+}
+finally{
+
+ setIsLoading(false);
+
+}
+    // const data = await response.json();
+
+    // console.log("Analysis job started:", data.job_id);
+
+    // setIsLoading(false); // turn submission loading screen off before we get to the loading screen for route changes
+    // // reroute user to interview's webpage
+    // router.push(`/interviews/${newInterview.id}`);
   }
 
   // const handleInterruptAvatar = async () => {
@@ -248,6 +432,16 @@ export default function NaturalConversationPage() {
     // If a user isn't logged in, they are typically redirected away.
     <AuthGuard>
       <p>Transcript: {fullTranscript}</p>
+
+      <button
+  onClick={() =>
+    toast.success(
+      "Your interview analysis is complete!"
+    )
+  }
+>
+  Test Toast
+</button>
       {/* Main container for the entire page layout */}
       <div className={styles.pageContainer}>
         {/* Holds the video feeds and the control buttons */}

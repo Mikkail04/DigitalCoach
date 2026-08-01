@@ -11,7 +11,7 @@ class HeyGenSessionRequest(BaseModel):
     """
     
     avatar_id: str = "dd73ea75-1218-4ef3-92ce-606d5f7fbc0a" # What the avatar looks like
-    voice_id: str = "c2527536-6d1f-4412-a643-53a3497dada9" # What the avatar sounds like 
+    voice_id: str = "62bbb4b2-bb26-4727-bc87-cfb2bd4e0cc8" # What the avatar sounds like 
     #context_id: str = "595268c3-a4cf-499d-bf85-efd006fe8a47" # What the avatar knows
     context_id: str = "609a5458-39e1-4f26-a283-f56fb75ed5d6"
     is_sandbox: bool = False # Toggle HeyGen LiveAvatar's sandbox mode 
