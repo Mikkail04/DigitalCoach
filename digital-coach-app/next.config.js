@@ -15,8 +15,12 @@ const nextConfig = {
     emotion: true,
   },
   // Expose NODE_ENV to client side so Firebase can detect development mode
+  // env: {
+  //   NEXT_PUBLIC_USE_FIREBASE_EMULATOR: process.env.NODE_ENV === "development" ? "true" : "false",
+  // },
   env: {
-    NEXT_PUBLIC_USE_FIREBASE_EMULATOR: process.env.NODE_ENV === "development" ? "true" : "false",
+    NEXT_PUBLIC_USE_FIREBASE_EMULATOR:
+      process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR || "false",
   },
   images: {
     remotePatterns: [
