@@ -1,0 +1,1 @@
+export const MAX_SESSION_TIME = 300;

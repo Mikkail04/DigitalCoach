@@ -1,25 +1,31 @@
-import { useState, useEffect, useRef, useContext } from "react";
-// import Transcript from "@App/components/organisms/Transcript";
+import { useState, useEffect } from "react";
 import AuthGuard from "@App/lib/auth/AuthGuard";
-// import { uploadAnswerVideo } from "@App/lib/storage/StorageService";
 import { v4 as uuidv4 } from "uuid";
 import styles from "@App/styles/interview/NaturalConversationPage.module.scss";
-// import InteractiveAvatar from "@App/components/organisms/InteractiveAvatar";
 import dynamic from "next/dynamic";
-import VideoRecorder from "@App/components/video";
 import { useRouter } from "next/router";
 import { CircleAlert } from "lucide-react";
-import { MAX_SESSION_TIME } from "@App/components/video";
 import { useAuth } from "@App/lib/auth/AuthContextProvider";
 import Spinner from "@App/components/atoms/Spinner";
 import { IInterview } from "@App/lib/interview/models";
 import toast from "react-hot-toast";
+import { MAX_SESSION_TIME } from "@App/components/constants";
+
 type Role = "user" | "interviewer";
+
 interface Message {
   role: Role;
   text: string;
   timestamp: string;
 }
+
+const VideoRecorder = dynamic(
+  () => import("@App/components/video"),
+  {
+    ssr: false,
+    loading: () => <div>Loading Recorder...</div>,
+  }
+);
 
 const InteractiveAvatar = dynamic(
   () => import("@App/components/organisms/InteractiveAvatar"),
