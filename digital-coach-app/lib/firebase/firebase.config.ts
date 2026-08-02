@@ -35,7 +35,7 @@ if (typeof window !== "undefined" && "measurementId" in firebaseConfig) {
 }
 // Connect emulators for development only. NODE_ENV will be 'development' automatically due to docker-compose.yml setting 
 // Check emulator flag set by next.config.js which is based on NODE_ENV 
-const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true"; 
+const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "false"; 
 if (useEmulator) {
   // Determine host (browser or Docker) if we're in the browser (window exists), use localhost and if we're in a Docker container, use the service name 'firebase'.
   const emulatorHost = typeof window !== "undefined" ? "localhost" : "firebase";
