@@ -24,7 +24,7 @@ export async function getUser(userId: string) {
   const snap = await getDoc(doc(db, 
     "users", userId));
   if (!snap.exists()) {
-    throw `User with id=${userId} doesn't exist.`;
+    throw new Error(`User with id=${userId} doesn't exist.`);
   }
   return snap.data();
 };

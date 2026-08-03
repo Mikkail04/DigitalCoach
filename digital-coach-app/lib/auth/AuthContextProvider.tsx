@@ -121,7 +121,11 @@ export function AuthProvider({ children }: {children: ReactNode}) {
         const userData = await getUser(firebaseUser.uid);
         setUserData(userData as IUser);
     } catch (e) {
-        console.error("Error fetching user profile", e);
+        console.error("Error fetching user profile", {
+        code: (e as any)?.code,
+        message: (e as any)?.message,
+        full: e,
+        });
         setUserData(null);
     } finally {
         setUserDataLoading(false);
