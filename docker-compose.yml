@@ -85,10 +85,11 @@ services:
       - "8000:8000" # Expose port 8000 for the API
     environment:  
       - WORKERS_COUNT=3
+      - REDIS_URL=redis://redis:6379
       # Remove these emulator variables if you want to use the real services
-      - FIRESTORE_EMULATOR_HOST=firebase:8080 # connect to Firestore emulator
-      - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099 # connect Authentication emulator
-      - FIREBASE_STORAGE_EMULATOR_HOST=firebase:9199 # connect to Storage emulator
+      # - FIRESTORE_EMULATOR_HOST=firebase:8080 # connect to Firestore emulator
+      # - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099 # connect Authentication emulator
+      # - FIREBASE_STORAGE_EMULATOR_HOST=firebase:9199 # connect to Storage emulator
       - GCLOUD_PROJECT=digitalcoach-31674 # allows admin SDK to communicate with the emulators shared by the other containers, use the actual project id for real services
       - ENVIRONMENT=development # used when connecting to Firebase to switch between emulators and real services
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/firebase-admin.json # directory for firebase admin key
@@ -126,14 +127,15 @@ services:
     depends_on:
       - redis
     environment:  
+      - REDIS_URL=redis://redis:6379
       - WORKERS_COUNT=3
       - LM_BASE_URL=http://model-runner.docker.internal/engines/v1
       - LM_API_KEY=dummy
       - MODEL=ai/qwen3:4B-UD-Q4_K_XL
       # Remove these emulator variables if you want to use the real services
-      - FIRESTORE_EMULATOR_HOST=firebase:8080 # connect to Firestore emulator
-      - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099 # connect Authentication emulator
-      - FIREBASE_STORAGE_EMULATOR_HOST=firebase:9199 # connect to Storage emulator
+      # - FIRESTORE_EMULATOR_HOST=firebase:8080 # connect to Firestore emulator
+      # - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099 # connect Authentication emulator
+      # - FIREBASE_STORAGE_EMULATOR_HOST=firebase:9199 # connect to Storage emulator
       - GCLOUD_PROJECT=digitalcoach-31674 # allows admin SDK to communicate with the emulators shared by the other containers, use the actual project id for real services
       - ENVIRONMENT=development # used when connecting to Firebase to switch between emulators and real services
       - GOOGLE_APPLICATION_CREDENTIALS=/app/digital-coach-firebase-adminsdk.json # directory for firebase admin key
@@ -154,14 +156,15 @@ services:
     depends_on:
       - redis
     environment:  
+      - REDIS_URL=redis://redis:6379
       - WORKERS_COUNT=3
       - LM_BASE_URL=http://model-runner.docker.internal/engines/v1
       - LM_API_KEY=dummy
       - MODEL=ai/qwen3:4B-UD-Q4_K_XL
       # Remove these emulator variables if you want to use the real services
-      - FIRESTORE_EMULATOR_HOST=firebase:8080 # connect to Firestore emulator
-      - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099 # connect Authentication emulator
-      - FIREBASE_STORAGE_EMULATOR_HOST=firebase:9199 # connect to Storage emulator
+      # - FIRESTORE_EMULATOR_HOST=firebase:8080 # connect to Firestore emulator
+      # - FIREBASE_AUTH_EMULATOR_HOST=firebase:9099 # connect Authentication emulator
+      # - FIREBASE_STORAGE_EMULATOR_HOST=firebase:9199 # connect to Storage emulator
       - GCLOUD_PROJECT=digitalcoach-31674 # allows admin SDK to communicate with the emulators shared by the other containers, use the actual project id for real services
       - ENVIRONMENT=development # used when connecting to Firebase to switch between emulators and real services
       - GOOGLE_APPLICATION_CREDENTIALS=/app/digital-coach-firebase-adminsdk.json # directory for firebase admin key

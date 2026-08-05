@@ -7,7 +7,11 @@ logger = get_logger(__name__)
 
 load_dotenv() # load environment variables
 # Create the connection pool, i.e. a way to manage and reuse the same Redis connection instead of establishing a new one everytime
-redis_url = os.getenv("REDIS_URL") # check if we have a redis URL (this is for cases where we'd use a cloud provider)
+#redis_url = os.getenv("REDIS_URL") # check if we have a redis URL (this is for cases where we'd use a cloud provider)
+redis_url = os.getenv(
+    "REDIS_URL",
+    "redis://redis:6379"
+)
 
 try:
     if (redis_url):
@@ -18,7 +22,7 @@ try:
         POOL = ConnectionPool(
             host=os.getenv("REDIS_HOST", "redis"),
             port=int(os.getenv("REDIS_PORT", 6379)),
-            password=os.getenv("REDIS_PASSWRORD", ""),
+            password=os.getenv("REDIS_PASSWORD", ""),
             decode_responses=False,
             socket_timeout=5, # time to wait for Redis to respond before throwing an error instead of infinitely hanging 
             health_check_interval=30,

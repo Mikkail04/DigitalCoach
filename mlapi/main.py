@@ -13,7 +13,7 @@ from routes import (
     interview,
     test_firebase # this is for testing backend's connection to firebase
 )
-
+import os
 
 api_description = """
 This API provides a simple interface to the various ML models used in Digital Coach. 
@@ -58,7 +58,13 @@ def root():
     }
 
 # Create Redis Queue (RQ) Dashboard to monitor RQ
-dashboard = RedisQueueDashboard("redis://redis:6379/", "/rq")
+# dashboard = RedisQueueDashboard("redis://redis:6379/", "/rq")
+redis_url = os.getenv(
+    "REDIS_URL",
+    "redis://redis:6379"
+)
+
+dashboard = RedisQueueDashboard(redis_url, "/rq")
 # Access dashboard at localhost:8000/rq
 app.mount("/rq", dashboard)
 
