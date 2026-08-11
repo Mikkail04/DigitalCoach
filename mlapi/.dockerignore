@@ -6,7 +6,6 @@ __pycache__/
 .git
 .venv
 tests/
-data/
 .ruff_cache/
 .pytest_cache/
 .mypy_cache/
