@@ -67,4 +67,6 @@ EXPOSE 8000
 # main:app Tells Uvicorn to look for the "app" instance in the main.py file
 # --host 0.0.0.0 tells the server to listen on all network addresses meaning it will be accessible from outside of the container, e.g. your browser
 # --port 8000 tells the server to listen on port 8000
+RUN echo "=== /app contents ===" && \
+    find /app -maxdepth 2 -type f | sort
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

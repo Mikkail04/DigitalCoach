@@ -1,11 +1,17 @@
 from fastapi import APIRouter
 from utils.logger_config import get_logger
-from schemas import CreateUserResponse, CreateUserRequest, GetUserRequest, GetUserResponse
+from schemas import (
+    CreateUserResponse,
+    CreateUserRequest,
+    GetUserRequest,
+    GetUserResponse,
+)
 from services.firebase_setup import get_firestore_client
 
-logger = get_logger(__name__) # create a logger instance to log messages
+logger = get_logger(__name__)  # create a logger instance to log messages
 
 router = APIRouter(prefix="/api/user", tags=["user"])
+
 
 # POST /api/user
 @router.post(
@@ -29,6 +35,7 @@ async def create_user(request: CreateUserRequest):
     except Exception as e:
         logger.info(f"Failed to create user: {e}")
         return CreateUserResponse(success=False)
+
 
 # GET /api/user
 @router.get(
