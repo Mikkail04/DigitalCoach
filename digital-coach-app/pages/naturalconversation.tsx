@@ -152,7 +152,7 @@ export default function NaturalConversationPage() {
   //       setIsLoading(false);
   //   }
   // };
-  const handleStartInterview = async () => {
+const handleStartInterview = async () => {
   if (heygenToken?.length > 0) {
     console.log("Using preloaded HeyGen token");
     return;
@@ -162,14 +162,17 @@ export default function NaturalConversationPage() {
   setIsLoading(true);
   setLoadingMessage("Requesting Interview Session...");
 
-  const host =
-    typeof window !== "undefined"
-      ? "localhost:8000"
-      : "api";
-
   try {
+    const host = process.env.NEXT_PUBLIC_HOST;
+
+    if (!host) {
+      throw new Error("NEXT_PUBLIC_HOST is not configured");
+    }
+
+    console.log(`Using ${host} for the host.`);
+
     const response = await fetch(
-      `http://${host}/api/heygen/session_token`,
+      `${host}/api/heygen/session_token`,
       {
         method: "GET",
         headers: {
@@ -180,165 +183,177 @@ export default function NaturalConversationPage() {
 
     const data = await response.json();
 
-    if (response.ok) {
-      setHeyGenToken(data);
+    if (!response.ok) {
+      throw new Error(
+        data?.detail ||
+        data?.message ||
+        response.statusText ||
+        "Failed to create HeyGen session"
+      );
     }
+
+    setHeyGenToken(data);
   } catch (error) {
-    console.error(error);
+    console.error("Failed to start interview:", error);
+    toast.error("Unable to start the interview.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const waitForAnalysis = async (
+  jobId: string,
+  interviewId: string
+) => {
+  const host = process.env.NEXT_PUBLIC_HOST;
+
+  if (!host) {
+    throw new Error("NEXT_PUBLIC_HOST is not configured");
+  }
+
+  const timeout = 120000;
+  const start = Date.now();
+
+  while (Date.now() - start < timeout) {
+    const response = await fetch(
+      `${host}/api/jobs/results/${jobId}`
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Job status request failed: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+
+    console.log("Job status:", result.status);
+
+    if (result.status === "success") {
+      toast.success("Your interview analysis is complete!");
+
+      setTimeout(() => {
+        router.push(`/interviews/${interviewId}`);
+      }, 3000);
+
+      return;
+    }
+
+    if (result.status === "failed") {
+      throw new Error("Analysis failed. Please try again.");
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, 3000)
+    );
+  }
+
+  throw new Error("Analysis timed out. Please try again.");
+};
+
+
+
+  /**
+   * Handle creating a new interview document within the user's collection of interviews using the interview's data like its duration.
+   */
+const handleStopInterview = async (
+  duration: string,
+  timeStarted: string
+) => {
+  if (!user) {
+    toast.error("You must be logged in.");
+    return;
+  }
+
+  const newInterview: IInterview = {
+    id: uuidv4(),
+    date: new Date().toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
+    }),
+    timeStarted,
+    duration,
+    feedback: undefined,
+    metrics: undefined,
+    transcript: fullTranscript,
+    sentiment: undefined,
+    url: undefined,
+  };
+
+  const req = {
+    userId: user.uid,
+    interview: newInterview,
+  };
+
+  setIsLoading(true);
+  setLoadingMessage("Submitting Interview Session...");
+
+  try {
+    const host = process.env.NEXT_PUBLIC_HOST;
+
+    if (!host) {
+      throw new Error("NEXT_PUBLIC_HOST is not configured");
+    }
+
+    console.log(`Using ${host} for the host.`);
+    console.log("Submitting Interview Session...");
+
+    const response = await fetch(
+      `${host}/api/interview`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(req),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.detail ||
+        data?.message ||
+        `Error creating interview: ${response.status}`
+      );
+    }
+
+    if (!data.job_id) {
+      throw new Error(
+        "Interview was created, but no analysis job ID was returned."
+      );
+    }
+
+    console.log(
+      "Analysis job started:",
+      data.job_id
+    );
+
+    setLoadingMessage("Analyzing your interview...");
+
+    await waitForAnalysis(
+      data.job_id,
+      newInterview.id
+    );
+  } catch (error) {
+    console.error(
+      "Interview submission/analysis error:",
+      error
+    );
+
+    toast.error(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong."
+    );
   } finally {
     setIsLoading(false);
   }
 };
 
 
-  const waitForAnalysis = async (jobId: string, interviewId: string) => {
-
-  const host =
-    typeof window !== "undefined"
-      ? "localhost:8000"
-      : "api";
-
-  const timeout = 120000; // 2 minutes
-  const start = Date.now();
-
-  //while (true) {
-  while (Date.now() - start < timeout) {
-
-    const response = await fetch(
-      `http://${host}/api/jobs/results/${jobId}`
-    );
-
-
-    const result = await response.json();
-    console.log("Job status:", result.status);
-
-    if (result.status === "success") {
-      console.log("ANALYSIS SUCCESS");
-      toast.success(
-  "Your interview analysis is complete!"
-);
-
-setTimeout(() => {
-  router.push(`/interviews/${interviewId}`);
-}, 3000);
-
-return;
-    }
-
-
-    if (result.status === "failed") {
-
-      toast.error(
-        "Analysis failed. Please try again."
-      );
-
-      return;
-    }
-
-
-    // check again after 3 seconds
-    await new Promise(
-      resolve => setTimeout(resolve, 3000)
-    );
-  }
-    toast.error(
-    "Analysis timed out. Please try again."
-  );
-
-};
-
-  /**
-   * Handle creating a new interview document within the user's collection of interviews using the interview's data like its duration.
-   */
-  const handleStopInterview = async (duration: string, timeStarted: string) => {
-    const newInterview: IInterview = {
-      id: uuidv4(), // create intreview id
-      date: new Date().toLocaleDateString("en-US", {
-        month: "2-digit",
-        day: "2-digit",
-        year: "numeric"
-      }), // MM/DD/YYYY
-      timeStarted, // HH:MM AM/PM
-      duration, // MMm SSs
-      // these values will be populated later by the backend once the interview has been processed
-      feedback: undefined,
-      metrics: undefined,
-      transcript: fullTranscript,
-      sentiment: undefined,
-      url: undefined,
-    }
-
-    if (!user) {
-  toast.error("You must be logged in.");
-  return;
-}
-
-    const req = {
-      userId: user!.uid,
-      interview: newInterview,
-    }
-    // submit new interview to backend
-    setIsLoading(true);
-    setLoadingMessage("Submitting Interview Session...");
-    console.log("Submitting Interview Session...")
-    const host = typeof window !== "undefined" ? "localhost:8000" : "api"; // if we're in the browser use localhost, but if we're in Docker, use the backend's service name (currently 'api')
-    console.log(`Using ${host} for the host.`);
-    const response = await fetch(`http://${host}/api/interview`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      }, 
-      body: JSON.stringify(req),
-    });
-    if (!response.ok) {
-      const errData = await response.json();
-      alert(`Error creating interview: ${JSON.stringify(errData)}`);
-      setIsLoading(false);
-      return;
-    }
-
-    const data = await response.json();
-
-console.log("Analysis job started:", data.job_id);
-
-//setIsLoading(false);
-
-setLoadingMessage("Analyzing your interview...");
-// Wait until analysis finishes before moving to results page
-// await waitForAnalysis(
-//   data.job_id,
-//   newInterview.id
-// );
-
-// setIsLoading(false);
-try {
-
- await waitForAnalysis(
-   data.job_id,
-   newInterview.id
- );
-
-}
-catch(error){
-
- toast.error(
-   "Something went wrong."
- );
-
-}
-finally{
-
- setIsLoading(false);
-
-}
-    // const data = await response.json();
-
-    // console.log("Analysis job started:", data.job_id);
-
-    // setIsLoading(false); // turn submission loading screen off before we get to the loading screen for route changes
-    // // reroute user to interview's webpage
-    // router.push(`/interviews/${newInterview.id}`);
-  }
 
   // const handleInterruptAvatar = async () => {
   //   await avatarRef.current?.handleInterrupt();

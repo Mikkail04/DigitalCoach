@@ -78,14 +78,13 @@ const Home: NextPage = () => {
     try {
       setIsCreatingSession(true);
 
-      const host =
-        typeof window !== "undefined"
-          ? "localhost:8000"
-          : "api";
+      const host = process.env.NEXT_PUBLIC_HOST;
 
-      const response = await fetch(
-        `http://${host}/api/heygen/session_token`
-      );
+if (!host) {
+  throw new Error("NEXT_PUBLIC_HOST is not configured");
+}
+
+const response = await fetch(`${host}/api/heygen/session_token`);
 
       const token = await response.json();
 

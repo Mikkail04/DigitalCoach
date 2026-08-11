@@ -350,7 +350,7 @@ if (!host) {
         };
 
         // save time when started
-        timeStartedRef.current = new Date().toLocaleDateString("en-US", {
+        timeStartedRef.current = new Date().toLocaleString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
         });
