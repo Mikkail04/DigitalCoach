@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from services.firebase_setup import initialize_firebase # initialize Firebase connection when backend starts
+from services.firebase_setup import (
+    initialize_firebase,
+)  # initialize Firebase connection when backend starts
 from rq_dashboard_fast import RedisQueueDashboard
 from routes import (
     jobs,
@@ -11,7 +13,7 @@ from routes import (
     assemblyai,
     llm,
     interview,
-    test_firebase # this is for testing backend's connection to firebase
+    test_firebase,  # this is for testing backend's connection to firebase
 )
 import os
 
@@ -28,12 +30,37 @@ app = FastAPI(
     description=api_description,
     version="0.1.0",
 )
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[
+#         "http://localhost:3000",
+#         "http://127.0.0.1:3000",
+#     ],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[
+#         "http://localhost:3000",
+#         "http://127.0.0.1:3000",
+
+#         "https://digital-coach-eta.vercel.app",
+#         "https://digital-coach-9y96zagki-youngkels04-8891s-projects.vercel.app",
+#     ],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://digital-coach-eta.vercel.app",
     ],
+    allow_origin_regex=r"https://digital-coach-[a-z0-9-]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,11 +72,12 @@ async def startup_event():
     """
     Handles any setup that needs to occur when the FastAPI server starts, e.g. setting up Firebase Admin SDK.
     """
-    
+
     # Initializes Firebase Admin SDK
     print("Initializing Firebase Admin SDK...")
     initialize_firebase()
     print("Firebase Admin SDK initialized")
+
 
 @app.get("/")
 def root():
@@ -57,12 +85,10 @@ def root():
         "message": "Welcome to the Digital Coach API, please see `/docs` for more information. If you want to access the Redis Queue (RQ) Dashboard to monitor your jobs, please see /rq."
     }
 
+
 # Create Redis Queue (RQ) Dashboard to monitor RQ
 # dashboard = RedisQueueDashboard("redis://redis:6379/", "/rq")
-redis_url = os.getenv(
-    "REDIS_URL",
-    "redis://redis:6379"
-)
+redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
 
 dashboard = RedisQueueDashboard(redis_url, "/rq")
 # Access dashboard at localhost:8000/rq
@@ -77,4 +103,4 @@ app.include_router(heygen.router)
 app.include_router(assemblyai.router)
 app.include_router(llm.router)
 app.include_router(interview.router)
-app.include_router(test_firebase.router) # this is for testing only
+app.include_router(test_firebase.router)  # this is for testing only

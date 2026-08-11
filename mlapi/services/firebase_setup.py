@@ -1,6 +1,7 @@
 """
 Handles setting the connection to Firebase services either emulators or production.
 """
+
 import json
 import firebase_admin
 from firebase_admin import firestore, firestore_async, credentials, auth
@@ -8,7 +9,8 @@ import os
 from dotenv import load_dotenv
 from utils.logger_config import get_logger
 
-logger = get_logger(__name__) # create logging instance to view outputs on Docker
+logger = get_logger(__name__)  # create logging instance to view outputs on Docker
+
 
 def initialize_firebase():
     """
@@ -23,67 +25,43 @@ def initialize_firebase():
 
     load_dotenv()
 
-    projectId = os.getenv(
-        "GCLOUD_PROJECT",
-        "digitalcoach-31674"
-    )
+    projectId = os.getenv("GCLOUD_PROJECT", "digitalcoach-31674")
 
     firebase_json = os.getenv("FIREBASE_ADMIN_JSON")
 
     if firebase_json:
         # Production (Render)
-        logger.info(
-            "Using Firebase credentials from FIREBASE_ADMIN_JSON"
-        )
+        logger.info("Using Firebase credentials from FIREBASE_ADMIN_JSON")
 
-        cred = credentials.Certificate(
-            json.loads(firebase_json)
-        )
+        cred = credentials.Certificate(json.loads(firebase_json))
 
-        return firebase_admin.initialize_app(
-            cred,
-            options={"projectId": projectId}
-        )
-
+        return firebase_admin.initialize_app(cred, options={"projectId": projectId})
 
     # Local Docker
-    service_account_path = os.getenv(
-        "GOOGLE_APPLICATION_CREDENTIALS"
-    )
+    service_account_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
-    logger.info(
-        f"Checking {service_account_path} for service account credentials."
-    )
+    logger.info(f"Checking {service_account_path} for service account credentials.")
 
     if service_account_path and os.path.exists(service_account_path):
-        logger.info(
-            "Found service account file!"
-        )
+        logger.info("Found service account file!")
 
-        cred = credentials.Certificate(
-            service_account_path
-        )
+        cred = credentials.Certificate(service_account_path)
 
-        return firebase_admin.initialize_app(
-            cred,
-            options={"projectId": projectId}
-        )
-
+        return firebase_admin.initialize_app(cred, options={"projectId": projectId})
 
     # Last resort (Google default credentials)
-    logger.warning(
-        "No Firebase credentials found. Attempting default credentials."
-    )
+    logger.warning("No Firebase credentials found. Attempting default credentials.")
 
     return firebase_admin.initialize_app()
 
-        
+
 def get_firestore_client():
     """
     Initializes Firebase Admin SDK and then returns Firestore asynchronous client, i.e. connection to firestore database.
     """
     initialize_firebase()
     return firestore_async.client()
+
 
 def get_auth_client():
     """
