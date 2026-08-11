@@ -35,20 +35,23 @@ if (typeof window !== "undefined" && "measurementId" in firebaseConfig) {
 }
 // Connect emulators for development only. NODE_ENV will be 'development' automatically due to docker-compose.yml setting 
 // Check emulator flag set by next.config.js which is based on NODE_ENV 
-const useEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "false"; 
+const useEmulator =
+  process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true";
+
 if (useEmulator) {
-  // Determine host (browser or Docker) if we're in the browser (window exists), use localhost and if we're in a Docker container, use the service name 'firebase'.
-  const emulatorHost = typeof window !== "undefined" ? "localhost" : "firebase";
+  const emulatorHost =
+    typeof window !== "undefined" ? "localhost" : "firebase";
 
-  // If we're in the browser, use localhost for auth emulator. If in Docker, use 'firebase' service name.
-  const authURL = typeof window !== "undefined" ? "http://localhost:9099" : "http://firebase:9099";
+  const authURL =
+    typeof window !== "undefined"
+      ? "http://localhost:9099"
+      : "http://firebase:9099";
 
-  console.log(`Connecting to Firebase Emulators on ${emulatorHost}`)
+  console.log(`Connecting to Firebase Emulators on ${emulatorHost}`);
 
-  connectAuthEmulator(auth, authURL, {disableWarnings: true});
-  connectFirestoreEmulator(db, emulatorHost, 8080)
-  connectStorageEmulator(storage, emulatorHost, 9199)
-
+  connectAuthEmulator(auth, authURL, { disableWarnings: true });
+  connectFirestoreEmulator(db, emulatorHost, 8080);
+  connectStorageEmulator(storage, emulatorHost, 9199);
 } else {
   console.log("Using production Firebase services.");
 }

@@ -38,7 +38,15 @@ function VideoRecorder({ startInterview, stopInterview, timeLeft, setTimeLeft, s
     const chunksRef = useRef<Blob[]>([]); // stores video as an array of chunks
     let isMounted = useRef(false);
     let timeStartedRef = useRef("");
-    const host = typeof window !== "undefined" ? "localhost:8000" : "api"; // if we're in the browser use localhost, but if we're in Docker, use the backend's service name (currently 'api')
+    //const host = typeof window !== "undefined" ? "localhost:8000" : "api"; // if we're in the browser use localhost, but if we're in Docker, use the backend's service name (currently 'api')
+    const host =
+    typeof window !== "undefined"
+        ? process.env.NEXT_PUBLIC_HOST
+        : "api";
+
+if (!host) {
+  throw new Error("NEXT_PUBLIC_HOST is not configured");
+}
     const { userData } = useAuth(); // extract user's Firestore data  
 
     const [pushToTalkMode, setPushToTalkMode] = useState(true);
@@ -352,10 +360,10 @@ function VideoRecorder({ startInterview, stopInterview, timeLeft, setTimeLeft, s
 
         // get temporary AssemblyAI authentication token from our backend
         const response = await fetch(
-            `http://${host}/api/assemblyai/token`,
+            `${host}/api/assemblyai/token`,
             {
                 method: "GET",
-            }
+            }   
         );
 
         const { token } = await response.json();
