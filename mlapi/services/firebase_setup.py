@@ -1,6 +1,7 @@
 """
 Handles setting the connection to Firebase services either emulators or production.
 """
+import json
 import firebase_admin
 from firebase_admin import firestore, firestore_async, credentials, auth
 import os
