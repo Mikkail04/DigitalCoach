@@ -1,21 +1,23 @@
 from fastapi import APIRouter
 from utils.logger_config import get_logger
 from schemas import (
-    CreateInterviewResponse, 
+    CreateInterviewResponse,
     CreateInterviewRequest,
     AnalyzeInterviewRequest,
-    GetInterviewRequest, 
-    GetInterviewResponse
-) 
+    GetInterviewRequest,
+    GetInterviewResponse,
+)
 from services.firebase_setup import get_firestore_client
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 import os
 
-logger = get_logger(__name__) # create a logger instance to log messages
+logger = get_logger(__name__)  # create a logger instance to log messages
 
 router = APIRouter(prefix="/api/interview", tags=["interview"])
-from services.orchestrator import start_interview_analysis 
+from services.orchestrator import start_interview_analysis
+
+
 # POST /api/interview
 @router.post(
     "/",
@@ -25,17 +27,23 @@ from services.orchestrator import start_interview_analysis
 )
 async def create_interview(request: CreateInterviewRequest):
     db = get_firestore_client()
-    logger.info(f"Attempting to create new interview document for user={request.userId}...")
+    logger.info(
+        f"Attempting to create new interview document for user={request.userId}..."
+    )
     try:
-        # convert interview pydantic object into a dictionary 
+        # convert interview pydantic object into a dictionary
         interview = request.interview.model_dump()
 
-        video_download_url = f"http://localhost:8000/api/interview/download/{interview['id']}"
-        interview['url'] = video_download_url
+        BASE_URL = os.getenv("BACKEND_URL")
+
+        video_download_url = f"{BASE_URL}/api/interview/download/{interview['id']}"
+        interview["url"] = video_download_url
 
         # get reference to user's interview collection
-        interviewRef = db.collection("users").document(request.userId).collection("interviews")
-        
+        interviewRef = (
+            db.collection("users").document(request.userId).collection("interviews")
+        )
+
         # add interview document to user's interview using the given interview id
         await interviewRef.document(interview["id"]).set(interview)
 
@@ -43,13 +51,16 @@ async def create_interview(request: CreateInterviewRequest):
 
         logger.info(f"Starting analysis on interview={interview["id"]}")
         # Start analysis jobs on interview
-        analysisRequest = AnalyzeInterviewRequest(user_id=request.userId, interview_id=interview["id"])
+        analysisRequest = AnalyzeInterviewRequest(
+            user_id=request.userId, interview_id=interview["id"]
+        )
         job_id = start_interview_analysis(analysisRequest)
 
         return CreateInterviewResponse(job_id=job_id, success=True)
     except Exception as e:
         logger.info(f"Failed to create interview: {e}")
         return CreateInterviewResponse(success=False)
+
 
 # GET /api/interview
 @router.get(
@@ -60,22 +71,30 @@ async def create_interview(request: CreateInterviewRequest):
 )
 async def get_interview(request: GetInterviewRequest):
     db = get_firestore_client()
-    logger.info(f"Attempting to retrieve interview document with id {request.interviewId} from user={request.userId}...")
+    logger.info(
+        f"Attempting to retrieve interview document with id {request.interviewId} from user={request.userId}..."
+    )
     try:
-        interview = await (db.collection("users").document(request.userId)
-                     .collection("interviews").document(request.interviewId).get())
+        interview = await (
+            db.collection("users")
+            .document(request.userId)
+            .collection("interviews")
+            .document(request.interviewId)
+            .get()
+        )
         logger.info("Retrieved interview!")
         return GetInterviewResponse(interview=interview)
     except Exception as e:
         logger.info(f"Failed to retrieve interview: {e}")
         return GetInterviewResponse(interview=None)
 
+
 @router.get(
     "/download/{interview_id}",
     summary="Download user's interview file",
     description="Returns the audio/video file for a given interview id so the user can download it.",
 )
-async def download_interview(user_id: str, interview_id: str):
+async def download_interview(interview_id: str):
     """
     Args:
         user_id: ID of the user
@@ -91,7 +110,5 @@ async def download_interview(user_id: str, interview_id: str):
         raise HTTPException(status_code=404, detail="Interview file not found")
 
     return FileResponse(
-        path=file_path,
-        filename=f"{interview_id}.mp4",
-        media_type="video/mp4"
+        path=file_path, filename=f"{interview_id}.mp4", media_type="video/mp4"
     )

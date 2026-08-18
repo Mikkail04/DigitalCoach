@@ -267,7 +267,7 @@ const questionsData: any[] = [
       "A close friend achieves something significant, and you’re tasked with planning a small celebration. How would you go about organizing it?",
       "You decide to participate in a competition or event related to a hobby. What steps would you take to improve and perform your best?",
       "You’re asked to teach or share your hobby with someone who is completely new to it. How would you approach this task?",
-      "You’re working on a team project, and a key team member suddenly quits or becomes unavailable right before a deadline. How would you handle their responsibilities?",
+      "You’re working on a team project, and a = team member suddenly quits or becomes unavailable right before a deadline. How would you handle their responsibilities?",
       "You miss an important deadline for an assignment due to a misunderstanding about the instructions. How would you address this with your teacher and move forward?",
       "A close friend confides in you about a personal problem they’re facing, but you’re unsure how to help. How would you approach offering support?",
     ],
