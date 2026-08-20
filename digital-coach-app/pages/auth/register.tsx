@@ -7,7 +7,7 @@ import Button from "@App/components/atoms/Button";
 import { Select } from "@App/components/Select";
 // import UserService from "@App/lib/user/UserService";
 import styles from "@App/styles/RegisterPage.module.scss";
-import { uploadFile, EStorageFolders, } from "@App/lib/storage/StorageService";
+//import { uploadFile, EStorageFolders, } from "@App/lib/storage/StorageService";
 import {
   EUserConcentrations,
   EUserProficiencies,
@@ -22,7 +22,6 @@ import { registerUser } from "@App/lib/user/UserService";
 //   avatar: FileList;
 // }
 interface RegFormInputs {
-  avatar: FileList;
   name: string;
   concentration: string;
   proficiency: string;
@@ -33,7 +32,7 @@ const inputValidationSchema = yup
     name: yup.string().max(255).required("Name is required"),
     concentration: yup.string().max(255).required("Concentration is required"),
     proficiency: yup.string().max(255).required("Proficiency is required"),
-    avatar: yup.mixed<FileList>().required("Profile picture is required"),
+    //avatar: yup.mixed<FileList>().required("Profile picture is required"),
   })
   .required();
 
@@ -48,29 +47,46 @@ export default function RegisterPage() {
     resolver: yupResolver(inputValidationSchema),
   });
 
-  const onSubmit = async (data: RegFormInputs) => {
+//   const onSubmit = async (data: RegFormInputs) => {
+//   if (!user) return;
+
+//   try {
+//     if (!data.avatar?.[0]) {
+//       throw new Error("Profile picture is required");
+//     }
+
+//     const avatarUrl = await uploadFile(
+//       data.avatar[0],
+//       EStorageFolders.profilePic,
+//       user.uid,
+//     );
+
+//     await registerUser(user.uid, {
+//       name: data.name,
+//       concentration: data.concentration as EUserConcentrations,
+//       proficiency: data.proficiency as EUserProficiencies,
+//       avatarUrl,
+//     });
+
+//     window.location.href = "/";
+
+//   } catch (e) {
+//     console.error("Registration failed", e);
+//     alert("Something went wrong. Please try again.");
+//   }
+// };
+const onSubmit = async (data: RegFormInputs) => {
   if (!user) return;
 
   try {
-    if (!data.avatar?.[0]) {
-      throw new Error("Profile picture is required");
-    }
-
-    const avatarUrl = await uploadFile(
-      data.avatar[0],
-      EStorageFolders.profilePic,
-      user.uid,
-    );
-
     await registerUser(user.uid, {
       name: data.name,
       concentration: data.concentration as EUserConcentrations,
       proficiency: data.proficiency as EUserProficiencies,
-      avatarUrl,
+      avatarUrl: "",
     });
 
     window.location.href = "/";
-
   } catch (e) {
     console.error("Registration failed", e);
     alert("Something went wrong. Please try again.");
@@ -84,8 +100,8 @@ export default function RegisterPage() {
         <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
           <h1>Register</h1>
 
-          <label>Select a profile picture:</label>
-          <input type="file" id="profilePic" accept="image/*" {...register("avatar")} />
+          {/* <label>Select a profile picture:</label>
+          <input type="file" id="profilePic" accept="image/*" {...register("avatar")} /> */}
 
           <label>Enter your name:</label>
           <TextField placeholder="Full Name" {...register("name")}/>
