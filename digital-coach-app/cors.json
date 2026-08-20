@@ -1,0 +1,10 @@
+[
+  {
+    "origin": [
+      "https://digital-coach-scxs-3rbbcoabi-youngkels04-8891s-projects.vercel.app"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "responseHeader": ["Content-Type", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
+]

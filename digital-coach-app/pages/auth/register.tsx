@@ -7,22 +7,25 @@ import Button from "@App/components/atoms/Button";
 import { Select } from "@App/components/Select";
 // import UserService from "@App/lib/user/UserService";
 import styles from "@App/styles/RegisterPage.module.scss";
-// import { EStorageFolders, } from "@App/lib/storage/StorageService";
+import { uploadFile, EStorageFolders, } from "@App/lib/storage/StorageService";
 import {
-  IBaseUserAttributes,
   EUserConcentrations,
   EUserProficiencies,
 } from "@App/lib/user/models";
 import { TextField } from "@App/components/atoms/TextField";
 
-import { useRouter } from "next/router";
 import { useAuth } from "@App/lib/auth/AuthContextProvider";
 import { registerUser } from "@App/lib/user/UserService";
-import { uploadFile, EStorageFolders } from "@App/lib/storage/StorageService";
-import { EarbudsBatterySharp } from "@mui/icons-material";
+//import { uploadFile, EStorageFolders } from "@App/lib/storage/StorageService";
 
-interface RegFormInputs extends IBaseUserAttributes {
+// interface RegFormInputs extends IBaseUserAttributes {
+//   avatar: FileList;
+// }
+interface RegFormInputs {
   avatar: FileList;
+  name: string;
+  concentration: string;
+  proficiency: string;
 }
 
 const inputValidationSchema = yup
@@ -30,6 +33,7 @@ const inputValidationSchema = yup
     name: yup.string().max(255).required("Name is required"),
     concentration: yup.string().max(255).required("Concentration is required"),
     proficiency: yup.string().max(255).required("Proficiency is required"),
+    avatar: yup.mixed<FileList>().required("Profile picture is required"),
   })
   .required();
 
@@ -45,32 +49,33 @@ export default function RegisterPage() {
   });
 
   const onSubmit = async (data: RegFormInputs) => {
-    if (!user) return;
-    try {
-      const { name, concentration, proficiency } = data;
-      // upload avatar
-      const avatarUrl = await uploadFile(
-        data.avatar[0],
-        EStorageFolders.profilePic, // use profile picture folder
-        user.uid, // use authentication ID for filename 
-      );
+  if (!user) return;
 
-      // update firestore profile
-      await registerUser(user.uid, {
-        name,
-        concentration,
-        proficiency,
-        avatarUrl,
-      });
-
-      // refresh homepage to get updated profile data
-      window.location.href = "/";
-
-    } catch (e) {
-      console.error("Registration failed", e);
-      alert("Something went wrong. Please try again.");
+  try {
+    if (!data.avatar?.[0]) {
+      throw new Error("Profile picture is required");
     }
-  };
+
+    const avatarUrl = await uploadFile(
+      data.avatar[0],
+      EStorageFolders.profilePic,
+      user.uid,
+    );
+
+    await registerUser(user.uid, {
+      name: data.name,
+      concentration: data.concentration as EUserConcentrations,
+      proficiency: data.proficiency as EUserProficiencies,
+      avatarUrl,
+    });
+
+    window.location.href = "/";
+
+  } catch (e) {
+    console.error("Registration failed", e);
+    alert("Something went wrong. Please try again.");
+  }
+};
 
 
   return (
@@ -80,7 +85,7 @@ export default function RegisterPage() {
           <h1>Register</h1>
 
           <label>Select a profile picture:</label>
-          <input type="file" id="profilePic" required accept="image/*" {...register("avatar")} />
+          <input type="file" id="profilePic" accept="image/*" {...register("avatar")} />
 
           <label>Enter your name:</label>
           <TextField placeholder="Full Name" {...register("name")}/>
