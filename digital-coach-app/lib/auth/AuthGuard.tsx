@@ -49,9 +49,11 @@ useEffect(() => {
     return;
   }
 
-  if (!userData?.registrationCompletedAt &&
-      router.pathname !== "/auth/profile/setup") {
-    router.replace("/auth/profile/setup");
+  if (
+    !userData?.registrationCompletedAt &&
+    router.pathname !== "/auth/register"
+  ) {
+    router.replace("/auth/register");
   }
 
 }, [user, userData, loading, userDataLoading, router]);

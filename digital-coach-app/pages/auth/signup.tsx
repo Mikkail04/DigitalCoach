@@ -36,7 +36,8 @@ const inputValidationSchema = yup
     .required("Password is required"),
     passwordConfirm: yup
       .string()
-      .oneOf([yup.ref("password"), null], "Passwords must match"),
+      .oneOf([yup.ref("password")], "Passwords must match")
+      .required("Password confirmation is required"),
   })
   .required();
 
@@ -62,7 +63,7 @@ export default function SignUpPage() {
       await signup(email, password);
       clearError();
       // navigate to register page after signup
-      router.push("/auth/profile/setup");
+      router.push("/auth/register");
     } catch (error) {
       console.error("Signup failed:", error);
     }
