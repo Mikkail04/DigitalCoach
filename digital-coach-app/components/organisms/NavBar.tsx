@@ -8,7 +8,7 @@ import { useState } from "react";
 
 export default function NavBar() {
   const { logout } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(true);
 
   return (
     // <div className={style.main}>
