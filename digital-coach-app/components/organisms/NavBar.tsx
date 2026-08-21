@@ -81,13 +81,13 @@ export default function NavBar() {
       Dashboard
     </Link>
 
-    <Link href="/video" className={style.linksText}>
+    {/* <Link href="/video" className={style.linksText}>
       Record a Mock Interview
     </Link>
 
     <Link href="/storytelling" className={style.linksText}>
       Practice Storytelling
-    </Link>
+    </Link> */}
 
     <Link
       href="/naturalconversation"
@@ -96,14 +96,14 @@ export default function NavBar() {
     >
       Natural Conversation
     </Link>
-
+{/* 
     <Link href="/start/custom" className={style.linksText}>
       Create Custom Question Set
     </Link>
 
     <Link href="/connections" className={style.linksText}>
       Connections
-    </Link>
+    </Link> */}
 
     <Link href="/progress" className={style.linksText}>
       Progress Tracking
