@@ -215,10 +215,15 @@ import { VideoOff } from "lucide-react";
 
 interface InteractiveAvatarProps {
   sessionToken: string;
+  shouldStart: boolean;
   onTranscriptUpdate?: (transcript: string, isFinal: boolean) => void;
 }
 
-function InteractiveAvatar({sessionToken, onTranscriptUpdate}: InteractiveAvatarProps) {
+function InteractiveAvatar({
+  sessionToken,
+  shouldStart,
+  onTranscriptUpdate,
+}: InteractiveAvatarProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const sessionRef = useRef<LiveAvatarSession>(null);
   const userConfig = {
@@ -226,6 +231,7 @@ function InteractiveAvatar({sessionToken, onTranscriptUpdate}: InteractiveAvatar
   };
   const sessionStartedRef = useRef(false);
   const sessionStartingRef = useRef(false);
+  const startedTokenRef = useRef<string | null>(null);
   
   /**
    * Starts HeyGen LiveAvatar session using the given session token and configurations. Recommend referring to the reviewing heygen/liveavatar-web-sdk library as API documentation is sparse as of writing this.
@@ -264,20 +270,27 @@ function InteractiveAvatar({sessionToken, onTranscriptUpdate}: InteractiveAvatar
   //   }
   // }
   const startSession = async () => {
-  console.log("Starting session with token:", sessionToken);
-    console.log("sessionToken:", sessionToken);
-    console.log("sessionToken length:", sessionToken?.length);
-  // Prevent double-start while a request is already in flight
-  if (sessionStartingRef.current) {
-    console.log("Session is already starting");
-    return;
-  }
+    console.log("Starting session with token:", sessionToken);
 
-  // Prevent creating a second session if one already exists
-  if (sessionRef.current) {
-    console.log("Session already exists");
-    return;
-  }
+    if (sessionStartingRef.current) {
+      console.log("Session is already starting");
+      return;
+    }
+
+    if (sessionStartedRef.current) {
+      console.log("Session already started");
+      return;
+    }
+
+    if (startedTokenRef.current === sessionToken) {
+      console.log("This token already started a session");
+      return;
+    }
+
+    if (sessionRef.current) {
+      console.log("Session already exists");
+      return;
+    }
 
   sessionStartingRef.current = true;
 
@@ -288,6 +301,7 @@ function InteractiveAvatar({sessionToken, onTranscriptUpdate}: InteractiveAvatar
       sessionToken,
       userConfig
     );
+    console.log("AgentEventsEnum", AgentEventsEnum);
 
     sessionRef.current = session;
 
@@ -296,15 +310,25 @@ function InteractiveAvatar({sessionToken, onTranscriptUpdate}: InteractiveAvatar
     console.log("Session started successfully");
 
     sessionStartedRef.current = true;
+    startedTokenRef.current = sessionToken;
 
     session.on(AgentEventsEnum.AVATAR_TRANSCRIPTION, ({ text }) => {
       if (onTranscriptUpdate) {
         onTranscriptUpdate(`Interviewer: ${text}`, true);
       }
     });
+    console.log("Registering HeyGen event listeners");
 
     if (videoRef.current) {
       session.attach(videoRef.current);
+      videoRef.current.onplaying = () =>
+        console.log("Avatar video playing");
+
+      videoRef.current.onpause = () =>
+        console.log("Avatar video paused");
+
+      videoRef.current.onerror = (e) =>
+        console.error("Avatar video error", e);
     }
   } catch (error) {
     console.error("Session start failed:", error);
@@ -337,23 +361,26 @@ function InteractiveAvatar({sessionToken, onTranscriptUpdate}: InteractiveAvatar
   } catch (error) {
     console.error("Error stopping session:", error);
   } finally {
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
     sessionRef.current = null;
     sessionStartedRef.current = false;
     sessionStartingRef.current = false;
-  }
+    startedTokenRef.current = null;
+}
 };
 
   useEffect(() => {
-    // start session once session token is received
-    if (sessionToken) {
-      startSession();
+    if (shouldStart && sessionToken) {
+      void startSession();
     }
 
-    // stop heygen session when component unmounts
     return () => {
-      stopSession();
-    }
-  }, [sessionToken]);
+      void stopSession();
+    };
+  }, [shouldStart, sessionToken]);
 
   return (
     <div className={styles.videoCard}>
@@ -364,6 +391,7 @@ function InteractiveAvatar({sessionToken, onTranscriptUpdate}: InteractiveAvatar
         <video 
           ref={videoRef}
           autoPlay
+          playsInline
           style={{display: sessionToken ? "block" : "none"}}
           />
         {!sessionToken && (

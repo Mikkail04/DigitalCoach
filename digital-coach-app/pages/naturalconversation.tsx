@@ -55,18 +55,19 @@ export default function NaturalConversationPage() {
   
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [heygenToken, setHeyGenToken] = useState(""); // HeyGen authentication token
+  const [shouldStartAvatar, setShouldStartAvatar] = useState(false);
   const [timeLeft, setTimeLeft] = useState(MAX_SESSION_TIME);
   const [cameraError, setCameraError] = useState("");
   const { user } = useAuth();
   const router = useRouter();
-  useEffect(() => {
-  if (typeof router.query.token === "string") {
-    setHeyGenToken(router.query.token);
-  }
-}, [router.query.token]);
-  const [fullTranscript, setFullTranscript] = useState(""); // transcript of the entire interview 
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState("");
+  // useEffect(() => {
+  // if (typeof router.query.token === "string") {
+  //   setHeyGenToken(router.query.token);
+  // }
+  // }, [router.query.token]);
+    const [fullTranscript, setFullTranscript] = useState(""); // transcript of the entire interview 
+    const [isLoading, setIsLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState("");
   
   // const { startRecording, stopRecording, mediaBlobUrl, previewStream } =
   //   useReactMediaRecorder({ video: true });
@@ -154,7 +155,8 @@ export default function NaturalConversationPage() {
   // };
 const handleStartInterview = async () => {
   if (heygenToken?.length > 0) {
-    console.log("Using preloaded HeyGen token");
+    console.log("Using existing HeyGen token");
+    setShouldStartAvatar(true);
     return;
   }
 
@@ -193,6 +195,7 @@ const handleStartInterview = async () => {
     }
 
     setHeyGenToken(data);
+    setShouldStartAvatar(true);
   } catch (error) {
     console.error("Failed to start interview:", error);
     toast.error("Unable to start the interview.");
@@ -502,6 +505,7 @@ const handleStopInterview = async (
               <div className={styles.videoBox}>
                 <InteractiveAvatar
                   sessionToken={heygenToken}
+                  shouldStart={shouldStartAvatar}
                   onTranscriptUpdate={updateTranscript}
                 />
               </div>

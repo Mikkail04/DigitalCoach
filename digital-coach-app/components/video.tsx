@@ -321,13 +321,22 @@ if (!host) {
 
     try {
         // start preview in case media stream isn't set up yet
-        if (!stream) {
+        if (!streamRef.current) {
             await startPreview();
-            return;
+
+            if (!streamRef.current) {
+                throw new Error("Camera and microphone are not ready.");
+            }
         }
 
         // create media recorder to record user's camera/audio
-        const mediaRecorder = new MediaRecorder(stream);
+        const recordingStream = streamRef.current;
+
+        if (!recordingStream) {
+            throw new Error("Camera and microphone are not ready.");
+        }
+
+        const mediaRecorder = new MediaRecorder(recordingStream);
         mediaRecorderRef.current = mediaRecorder;
         chunksRef.current = []; // reset old data in chunks array
 
@@ -429,7 +438,7 @@ if (!host) {
 
         // create audio context source from user's video and audio stream
         const source =
-            audioContext.createMediaStreamSource(stream);
+            audioContext.createMediaStreamSource(recordingStream);
 
         // load audio worklet from Next.js public folder
         await audioContext.audioWorklet.addModule(

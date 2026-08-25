@@ -94,7 +94,7 @@ export default function NavBar() {
       prefetch={true}
       className={style.linksText}
     >
-      Natural Conversation
+      Mock Interview
     </Link>
 {/* 
     <Link href="/start/custom" className={style.linksText}>
