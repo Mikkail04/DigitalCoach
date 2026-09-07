@@ -18,7 +18,7 @@ export default function CoreLayout({ children }: PropsWithChildren<{}>) {
       </Head>
 
       <div className={styles.pageContainer}>
-        {auth.userData && <NavBar />}
+        {auth.user && <NavBar/>}
         <div className={styles.container}>
           <Head>
             <title>{siteTitle}</title>

@@ -49,6 +49,7 @@ useEffect(() => {
     return;
   }
 
+  // Extra onboarding
   // if (
   //   !userData?.registrationCompletedAt &&
   //   router.pathname !== "/auth/register"
