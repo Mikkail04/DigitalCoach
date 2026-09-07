@@ -49,12 +49,12 @@ useEffect(() => {
     return;
   }
 
-  if (
-    !userData?.registrationCompletedAt &&
-    router.pathname !== "/auth/register"
-  ) {
-    router.replace("/auth/register");
-  }
+  // if (
+  //   !userData?.registrationCompletedAt &&
+  //   router.pathname !== "/auth/register"
+  // ) {
+  //   router.replace("/auth/register");
+  // }
 
 }, [user, userData, loading, userDataLoading, router]);
 
