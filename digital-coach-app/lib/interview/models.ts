@@ -62,28 +62,3 @@ export interface IInterview {
   sentiment: string | ISentiments | undefined, // sentiment analysis (this is used to store the initial analysis and then be replaced with the sentiment percentages later)
   url: string | undefined,
 }
-
-// export interface IInterviewDocumentReferenceAttributes {
-//   userId: string;
-//   interviewId: string;
-// }
-
-// export type TInterviewDocumentReference =
-//   | DocumentReference<IInterviewAttributes>
-//   | IInterviewDocumentReferenceAttributes;
-
-// export interface IBaseInterview {
-//   title: string;
-// }
-
-// export interface IInterviewAttributes extends IBaseInterview {
-//   completedAt: Timestamp | null;
-//   reviewedAt: Timestamp | null;
-//   createdAt: Timestamp;
-//   result: object | null;
-// }
-
-// export interface IInterview extends IInterviewAttributes {
-//   id: string;
-// }
-

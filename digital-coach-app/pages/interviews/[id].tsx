@@ -46,6 +46,7 @@ export default function InterviewResults() {
         },
         "transcript": [],
         "url": "google.com",
+        sentiment: undefined,
     }
     
     useEffect(() => {
@@ -76,7 +77,7 @@ export default function InterviewResults() {
                     <h1>Interview Performance</h1>
                     <div className={styles.scoreDisplay}>
                         <div className={styles.scoreValue}>
-                            {interview?.metrics.overall_score}
+                            {interview?.metrics?.overall_score}
                         </div>
                         <p className={styles.scoreLabel}>Overall Score</p>
                     </div>
@@ -108,10 +109,10 @@ export default function InterviewResults() {
 
                         <div className={styles.scoreBadge}>
                             <span className={styles.scoreText}>
-                                {interview?.feedback.overall_competency.star.score}
+                                {interview?.feedback?.overall_competency.star.score}
                             </span>
                         </div>
-                        <p className={styles.feedbackText}>{interview?.feedback.overall_competency.star.summary}</p>
+                        <p className={styles.feedbackText}>{interview?.feedback?.overall_competency.star.summary}</p>
                     </div>
 
                     {/* Pacing Score */}
@@ -128,11 +129,11 @@ export default function InterviewResults() {
 
                         <div className={styles.scoreBadge}>
                             <span className={styles.scoreText}>
-                                {interview?.feedback.overall_competency.clarity.score}
+                                {interview?.feedback?.overall_competency.clarity.score}
                             </span>
                         </div>
                         <p className={styles.feedbackText}>
-                            {interview?.feedback.overall_competency.clarity.summary}
+                            {interview?.feedback?.overall_competency.clarity.summary}
                         </p>
                     </div>
 
@@ -148,11 +149,11 @@ export default function InterviewResults() {
                             </div>
                         </div>
                         <div className={styles.scoreBadge}>
-                            <div className={styles.scoreText}>{interview?.feedback.overall_competency.confidence.score}    
+                            <div className={styles.scoreText}>{interview?.feedback?.overall_competency.confidence.score}    
                             </div>
                         </div>
                         <p className={styles.feedbackText}>
-                            {interview?.feedback.overall_competency.confidence.summary}
+                            {interview?.feedback?.overall_competency.confidence.summary}
                         </p>
                     </div>
 
@@ -169,11 +170,11 @@ export default function InterviewResults() {
                         </div>
                         <div className={styles.scoreBadge}>
                             <div className={styles.scoreText}>
-                                {interview?.feedback.overall_competency.engagement.score}
+                                {interview?.feedback?.overall_competency.engagement.score}
                             </div>
                         </div>
                         <p className={styles.feedbackText}>
-                            {interview?.feedback.overall_competency.engagement.summary}
+                            {interview?.feedback?.overall_competency.engagement.summary}
                         </p>
                     </div>
                 </div>

@@ -8,7 +8,7 @@ export enum EUserConcentrations {
   HR = "HR",
   Legal = "Legal",
   Operations = "Operations",
-  Engineering = "Engineering",
+Engineering = "Engineering",
   Product = "Product",
   Design = "Design",
 }
