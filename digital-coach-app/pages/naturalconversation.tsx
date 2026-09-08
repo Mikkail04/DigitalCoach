@@ -313,7 +313,11 @@ const handleStopInterview = async (
               )}
               <p className={`${styles.timerDisplay} ${timeLeft < 20 ? styles.timerWarning : ""}`}>
                 Timer: {formatTimer(timeLeft)}
-              </p>
+              </p> {timeLeft > 0 && timeLeft <= 30 && (
+                <p className={styles.timerWarning}>
+                  Interview will end in {timeLeft} seconds
+                </p>
+              )}
 
             {/* Video Grid */}
             <div className={styles.videoContainer}>
