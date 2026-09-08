@@ -1,9 +1,3 @@
-// import { PropsWithChildren, useMemo } from "react";
-// import AuthService from "./AuthService";
-// import { AuthContext } from "./AuthContext";
-// import UserService from "../user/UserService";
-// import { DocumentSnapshot } from "firebase/firestore";
-
 import {
     createContext,
     useContext,
@@ -21,9 +15,6 @@ import {
 } from "firebase/auth";
 
 import {
-    // doc,
-    // getDoc,
-    // setDoc,
     Timestamp,
 } from "firebase/firestore";
 
@@ -31,17 +22,6 @@ import { auth, db } from "@App/lib/firebase/firebase.config"; // import Firebase
 import { IUser } from "@App/lib/user/models";
 import { getUser, createUser } from "@App/lib/user/UserService";
 
-// define the shape of our authentication context
-// interface AuthContextType {
-//     user: User | null; // Firebase Auth user
-//     userData : IUser | null; // Firebase Firestore user profile
-//     loading: boolean; // flag used when checking if user is logged in, i.e. tells the app to "wait" until firebase is done verifying whether user is logged in
-//     login: (email: string, pass: string) => Promise<void>; // user login function
-//     signup: (email: string, pass: string) => Promise<void>; // user signup function
-//     logout: () => Promise<void>;
-//     error: string | null; // user logout function
-//     clearError: () => void;
-// }
 interface AuthContextType {
     user: User | null;
     userData: IUser | null;
@@ -100,20 +80,7 @@ export function AuthProvider({ children }: {children: ReactNode}) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         setUser(firebaseUser); // update firebase authentication as soon as authentication state changes
     
-        // if (firebaseUser) {
-        //     // logged in, retrieve user data from firestore
-        //     try {
-        //         const userData = await getUser(firebaseUser.uid);
-        //         // cast user data as our defined IUser model
-        //         setUserData(userData as IUser);
 
-        //     } catch (e) {
-        //         console.error("Error fetching user profile", e);
-        //     }
-        // } else {
-        //     // not logged in
-        //     setUserData(null);
-        // }
         if (firebaseUser) {
     setUserDataLoading(true);
 
@@ -160,20 +127,6 @@ else {
   /**
    * Handles user signup.
    */
-//   const signup = async (email: string, pass: string) => {
-//     setError(""); // set error to empty
-//     try {
-//         email = email.trim();
-//         pass = pass.trim();
-//         const cred = await createUserWithEmailAndPassword(auth, email, pass);
-//         // create new user in Firestore
-//         await createUser(cred.user);
-
-//         // onAuthStateChanged will handle updating userData
-//     } catch (e: any) {
-//         setError(getAuthErrorMessage(e));
-//     }
-//   };
 const signup = async (email: string, pass: string) => {
     setError("");
 
