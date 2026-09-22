@@ -1,125 +1,272 @@
 # DigitalCoach
 
-Senior Design Project for Fall 2022-Spring 2026
+Senior Design Project for Fall 2022–Spring 2026
 
-DigitalCoach is an AI-powered interview prep web application that allows job seekers to practice interviewing and receive immediate feedback. Some key features of DigitalCoach include creating interview sets from our database of questions and then recording corresponding video responses. Our AI uses machine learning models to analyze audio and video through a sentiment analysis. At the end, users are left with an overall score and actionable feedback.
+DigitalCoach is an AI-powered interview preparation platform that allows job seekers to practice interviews and receive immediate feedback. Users can create interview sessions, answer questions through video and audio recordings, and receive AI-generated coaching insights.
 
-The ML API now supports live transcription through AssemblyAI, text-based scoring, and competency feedback, making it easier to provide real-time guidance to users.
+The platform supports live transcription through AssemblyAI, AI-powered feedback generation, avatar-based interview experiences through HeyGen, and Firebase-backed data storage and authentication.
 
 ## Features
-- Create custom or predefined interview question sets.
-- Audio transcription and analysis using AssemblyAI.
-- Text scoring with a baseline AI model:
-   - Measures answer structure.
-   - Estimates Big Five personality traits.
-   - Generates competency feedback (communication clarity, confidence, engagement).
-- Provides an overall score and reasonable, actionable recommendations.
+
+* Create custom or predefined interview question sets.
+* Real-time interview simulations.
+* Audio transcription using AssemblyAI.
+* AI-powered interview feedback and coaching.
+* HeyGen Live Avatar interview experiences.
+* Firebase Authentication, Firestore, and Storage integration.
+* Background processing using Redis workers.
+* Local development using Firebase emulators and Docker.
 
 # Repository Structure
-- digital-coach-app/ – Frontend (Next.js + Firebase + React).
-- ml-api/ – Backend API (Flask) handling scoring, transcription, and feedback.
+
+* `digital-coach-app/` – Frontend application (Next.js + React + Firebase).
+* `mlapi/` – Backend API (FastAPI) responsible for AI processing, AssemblyAI integration, HeyGen integration, and worker jobs.
+* `docker-compose.yml` – Local development environment configuration.
+* `firebase.json` – Firebase emulator configuration.
 
 # General Use Flow
-1. User records an interview response.
-1. The response is stored in Firebase Firestore and Storage.
-1. A Firebase Cloud Function triggers when an answer document is created.
-1. The function sends the request to the ML API.
-1. The ML API processes the response asynchronously using a Redis queue.
-1. When processing finishes, the ML API sends results back to Firebase.
-1. Firebase updates the answer document with feedback and scoring.
-1. The frontend displays the results to the user.
+
+1. User signs into DigitalCoach.
+2. User starts an interview session.
+3. Audio and video data are collected through the frontend.
+4. AssemblyAI provides transcription services.
+5. The backend processes interview responses.
+6. Redis workers handle background AI tasks.
+7. Results are stored in Firebase.
+8. Feedback is displayed to the user in the frontend.
 
 # Setup Instructions
 
 ## Prerequisites
-- Node.js (v20.19.2 recommended)
-- Yarn
-- Python 3.10
-- Redis
-- Pipenv
-- NLTK (pip install nltk)
-- AssemblyAI account & API key
-- Firebase account & project
+
+* Docker Desktop
+* Git
+* GitHub account
+* AssemblyAI account and API key
+* HeyGen account and API key
+
+## Clone Repository
+
+```bash
+git clone https://github.com/Mikkail04/DigitalCoach.git
+cd DigitalCoach
+git checkout temp_working_branch
+```
 
 ## Environment Setup
-1. Firebase
-- Create a Firebase project.
-- Create a service account using Google Cloud Console.
-- Populate .env files in:
-   - digital-coach-app/
-   - digital-coach-app/functions/ (Use service account credentials; remove the example from the filename.)
-1. Python & ML API
-- Navigate to ml-api/:
-   - pipenv install
-   - pipenv run serve
-- Populate .env with your AssemblyAI API key.
-- Install NLTK packages:
-   - import nltk
-   - nltk.download()  
-1. AssemblyAI
-- Sign up at https://www.assemblyai.com/.
-- Retrieve your API key and add it to ml-api/.env.
-1. Redis
-- Start your Redis server.
-1. Firebase CLI
-- Login: firebase login
-- List projects: firebase projects:list
-- Set project: firebase use <projectId>
 
+### Frontend Environment
 
+Create:
 
-# Frontend Setup
-1. Navigate to digital-coach-app/
-- yarn install
-- npm install -g firebase-tools
-1. Navigate to functions/ inside digital-coach-app/
-- yarn install
-- yarn add typescript@latest
-- yarn build --skipLibCheck
-1. Run emulators:
-- cd ../
-- yarn run emulate  # Firebase emulator
-- yarn run dev      # Next.js dev server
-1. Seed the database:
-- Visit localhost:3000/api/seed
-1. Access:
-- Frontend: localhost:3000
-- Firebase console: localhost:4000
+```text
+digital-coach-app/.env
+```
 
-# Backend Setup
-1. Start Redis.
-1. Navigate to ml-api/:
-- pipenv install
-- pipenv run serve
-1. API endpoints:
-- Transcribe audio
-- Score text
-- Generate competency feedback
+Populate with:
 
-# ML API
-This handles the following features:
-1. Audio transcription
-1. Text scoring
-1. Feedback generation
-1. Personality estimation
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
-# Technlogies Used
+ASSEMBLY_API_KEY=your_assemblyai_key
+HEYGEN_LIVEAVATAR_API=your_heygen_key
+OPEN_AI_API_KEY=your_openai_key
+```
+
+### Backend Environment
+
+Create:
+
+```text
+mlapi/.env
+```
+
+Populate with:
+
+```env
+ASSEMBLY_API_KEY=your_assemblyai_key
+HEYGEN_LIVEAVATAR_API=your_heygen_key
+OPEN_AI_API_KEY=your_openai_key
+```
+
+## Docker Setup
+
+From the repository root:
+
+```bash
+docker compose up -d
+```
+
+Verify containers:
+
+```bash
+docker compose ps
+```
+
+Expected services:
+
+* frontend
+* api
+* redis
+* firebase
+* high-worker
+* default-worker
+
+## Access Local Services
+
+| Service              | URL                   |
+| -------------------- | --------------------- |
+| Frontend             | http://localhost:3000 |
+| Backend API          | http://localhost:8000 |
+| Firebase Emulator UI | http://localhost:4000 |
+| Firestore Emulator   | http://localhost:8080 |
+| Auth Emulator        | http://localhost:9099 |
+| Storage Emulator     | http://localhost:9199 |
+
+# Backend Services
+
+## API
+
+FastAPI service responsible for:
+
+* AssemblyAI integration
+* HeyGen integration
+* Interview processing
+* AI feedback generation
+* User profile operations
+
+Runs on:
+
+```text
+http://localhost:8000
+```
+
+## Redis
+
+Used for background job processing.
+
+Runs on:
+
+```text
+localhost:6379
+```
+
+## Workers
+
+Two worker services process queued jobs:
+
+* high-worker
+* default-worker
+
+# Firebase
+
+Local development uses Firebase emulators for:
+
+* Authentication
+* Firestore
+* Storage
+* Cloud Functions
+
+The frontend automatically connects to the emulators when:
+
+```env
+NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true
+```
+
+# ML / AI Services
+
+DigitalCoach integrates with:
+
+## AssemblyAI
+
+Provides:
+
+* Speech-to-text transcription
+* Real-time audio processing
+
+## HeyGen
+
+Provides:
+
+* AI avatar interviewers
+* Live avatar sessions
+
+## OpenAI
+
+Provides:
+
+* Interview feedback
+* Coaching recommendations
+* AI-assisted evaluation
+
+# Reproducing the Working Development Environment
+
+To reproduce the working setup used by the team:
+
+1. Clone the repository.
+2. Checkout `temp_working_branch`.
+3. Create both `.env` files.
+4. Add valid AssemblyAI and HeyGen API keys.
+5. Start Docker Desktop.
+6. Run:
+
+```bash
+docker compose up -d
+```
+
+7. Open:
+
+```text
+http://localhost:3000
+```
+
+If configured correctly:
+
+* Firebase emulators connect successfully.
+* Avatar sessions initialize.
+* AssemblyAI token requests succeed.
+* Interview sessions can start normally.
+
+# Technologies Used
 
 ## Frontend
-- Next.js, React
-- Firebase (Storage, Firestore, Functions)
-- Sass
-- Yarn
-## Backend / ML API
-- Flask, Redis, Pipenv
-- RQ (task queue)
-- AssemblyAI (transcription)
-- FER (Facial Expression Recognition)
-## Machine Learning / Data
-- NumPy, SciPy, Matplotlib
-- TensorFlow, Keras, OpenCV
-- NLTK
-- Jupyter Notebooks
+
+* Next.js
+* React
+* TypeScript
+* Firebase
+* Sass
+
+## Backend
+
+* FastAPI
+* Python
+* Redis
+* Uvicorn
+
+## Infrastructure
+
+* Docker
+* Docker Compose
+* Firebase Emulator Suite
+
+## AI Services
+
+* AssemblyAI
+* HeyGen
+* OpenAI
+
+## Data & Processing
+
+* Redis
+* Firebase Firestore
+* Firebase Storage
+
 
 
 
