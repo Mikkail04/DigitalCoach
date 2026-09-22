@@ -1,6 +1,6 @@
 # DigitalCoach
 
-Senior Design Project for Fall 2022–Spring 2026
+Senior Design Project for Fall 2022–Fall 2026
 
 DigitalCoach is an AI-powered interview preparation platform that allows job seekers to practice interviews and receive immediate feedback. Users can create interview sessions, answer questions through video and audio recordings, and receive AI-generated coaching insights.
 
