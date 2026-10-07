@@ -17,7 +17,7 @@ The ML API now supports live transcription through AssemblyAI, text-based scorin
 
 # Repository Structure
 - digital-coach-app/ – Frontend (Next.js + Firebase + React).
-- ml-api/ – Backend API (Flask) handling scoring, transcription, and feedback.
+- mlapi/ – FastAPI backend handling scoring, transcription, and feedback.
 
 # General Use Flow
 1. User records an interview response.
