@@ -1,125 +1,141 @@
 # DigitalCoach
 
-Senior Design Project for Fall 2022-Spring 2027
-
-DigitalCoach is an AI-powered interview prep web application that allows job seekers to practice interviewing and receive immediate feedback. Some key features of DigitalCoach include creating interview sets from our database of questions and then recording corresponding video responses. Our AI uses machine learning models to analyze audio and video through a sentiment analysis. At the end, users are left with an overall score and actionable feedback.
-
-The ML API now supports live transcription through AssemblyAI, text-based scoring, and competency feedback, making it easier to provide real-time guidance to users.
-
-## Features
-- Create custom or predefined interview question sets.
-- Audio transcription and analysis using AssemblyAI.
-- Text scoring with a baseline AI model:
-   - Measures answer structure.
-   - Estimates Big Five personality traits.
-   - Generates competency feedback (communication clarity, confidence, engagement).
-- Provides an overall score and reasonable, actionable recommendations.
-
-# Repository Structure
-- digital-coach-app/ – Frontend (Next.js + Firebase + React).
-- mlapi/ – FastAPI backend handling scoring, transcription, and feedback.
-
-# General Use Flow
-1. User records an interview response.
-1. The response is stored in Firebase Firestore and Storage.
-1. A Firebase Cloud Function triggers when an answer document is created.
-1. The function sends the request to the ML API.
-1. The ML API processes the response asynchronously using a Redis queue.
-1. When processing finishes, the ML API sends results back to Firebase.
-1. Firebase updates the answer document with feedback and scoring.
-1. The frontend displays the results to the user.
-
-# Setup Instructions
+DigitalCoach is an AI-powered interview practice application. Users can complete mock interviews, receive interview feedback and scores, and review competency-based results.
 
 ## Prerequisites
-- Node.js (v20.19.2 recommended)
-- Yarn
-- Python 3.10
-- Redis
-- Pipenv
-- NLTK (pip install nltk)
-- AssemblyAI account & API key
-- Firebase account & project
 
-## Environment Setup
-1. Firebase
-- Create a Firebase project.
-- Create a service account using Google Cloud Console.
-- Populate .env files in:
-   - digital-coach-app/
-   - digital-coach-app/functions/ (Use service account credentials; remove the example from the filename.)
-1. Python & ML API
-- Navigate to ml-api/:
-   - pipenv install
-   - pipenv run serve
-- Populate .env with your AssemblyAI API key.
-- Install NLTK packages:
-   - import nltk
-   - nltk.download()  
-1. AssemblyAI
-- Sign up at https://www.assemblyai.com/.
-- Retrieve your API key and add it to ml-api/.env.
-1. Redis
-- Start your Redis server.
-1. Firebase CLI
-- Login: firebase login
-- List projects: firebase projects:list
-- Set project: firebase use <projectId>
+* [Git](https://git-scm.com/downloads)
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/) with Docker Compose enabled
+* API credentials for the services you want to use, including Firebase, AssemblyAI, and HeyGen LiveAvatar
 
+The Docker setup runs the frontend, backend API, Firebase emulators, Redis, and background workers.
 
+## Quick Start (Docker)
 
-# Frontend Setup
-1. Navigate to digital-coach-app/
-- yarn install
-- npm install -g firebase-tools
-1. Navigate to functions/ inside digital-coach-app/
-- yarn install
-- yarn add typescript@latest
-- yarn build --skipLibCheck
-1. Run emulators:
-- cd ../
-- yarn run emulate  # Firebase emulator
-- yarn run dev      # Next.js dev server
-1. Seed the database:
-- Visit localhost:3000/api/seed
-1. Access:
-- Frontend: localhost:3000
-- Firebase console: localhost:4000
+### 1. Clone the repository
 
-# Backend Setup
-1. Start Redis.
-1. Navigate to ml-api/:
-- pipenv install
-- pipenv run serve
-1. API endpoints:
-- Transcribe audio
-- Score text
-- Generate competency feedback
+```powershell
+git clone <repository-url>
+cd DigitalCoach
+```
 
-# ML API
-This handles the following features:
-1. Audio transcription
-1. Text scoring
-1. Feedback generation
-1. Personality estimation
+Replace `<repository-url>` with the repository's clone URL.
 
-# Technlogies Used
+### 2. Configure environment variables
 
-## Frontend
-- Next.js, React
-- Firebase (Storage, Firestore, Functions)
-- Sass
-- Yarn
-## Backend / ML API
-- Flask, Redis, Pipenv
-- RQ (task queue)
-- AssemblyAI (transcription)
-- FER (Facial Expression Recognition)
-## Machine Learning / Data
-- NumPy, SciPy, Matplotlib
-- TensorFlow, Keras, OpenCV
-- NLTK
-- Jupyter Notebooks
+Create a local environment file from the example:
 
+```powershell
+Copy-Item .\digital-coach-app\.env.example .\digital-coach-app\.env
+```
 
+Open `digital-coach-app/.env` and fill in the required values.
 
+At minimum, the tested local interview workflow requires:
+
+* `NEXT_PUBLIC_FIREBASE_API_KEY`
+* `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+* `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+* `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+* `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+* `NEXT_PUBLIC_FIREBASE_APP_ID`
+* `ASSEMBLY_API_KEY`
+* `HEYGEN_LIVEAVATAR_API`
+
+Copy the Firebase web app configuration from your Firebase project. Keep `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true` for the local emulator setup, and keep the Firebase project ID consistent with the Docker Compose configuration (`digitalcoach-31674`), unless you have intentionally changed that configuration.
+
+Other integrations may require additional variables, depending on the features you enable. Refer to `.env.example` and the Docker Compose configuration.
+
+**Keep credentials private.** Do not commit `.env` or API keys to Git. The local `.env` file should remain untracked.
+
+### 3. Start the application
+
+Make sure Docker Desktop is running, then run from the repository root:
+
+```powershell
+docker compose up -d --build
+```
+
+Check the service status:
+
+```powershell
+docker compose ps
+```
+
+The first startup may take a little while as containers initialize. If a service is still starting, check its logs:
+
+```powershell
+docker compose logs -f
+```
+
+Press `Ctrl+C` to stop following the logs; this does not shut down the containers.
+
+### 4. Open the application
+
+* **Frontend:** http://localhost:3000
+* **Backend API documentation:** http://localhost:8000/docs
+* **Firebase Emulator UI:** http://localhost:4000
+
+Create an account or sign in through the frontend, then follow the interview workflow.
+
+### 5. Stop the application
+
+From the repository root:
+
+```powershell
+docker compose down
+```
+
+This stops and removes the containers while preserving named volumes. To also delete persistent Docker volumes and their data, use `docker compose down -v` only when you intentionally want to reset that data.
+
+## Troubleshooting
+
+### Frontend reports `auth/invalid-api-key`
+
+Check that the `NEXT_PUBLIC_FIREBASE_*` values in `digital-coach-app/.env` are populated correctly. After changing frontend public environment values, rebuild the frontend:
+
+```powershell
+docker compose up -d --build frontend
+```
+
+### AssemblyAI or HeyGen reports a missing API key
+
+Confirm that `ASSEMBLY_API_KEY` and `HEYGEN_LIVEAVATAR_API` are set in `digital-coach-app/.env`, then recreate the API container:
+
+```powershell
+docker compose up -d --force-recreate api
+```
+
+### A service fails during startup
+
+Some services depend on other containers becoming ready. Check the service status and logs:
+
+```powershell
+docker compose ps
+docker compose logs --tail=100
+```
+
+Wait for the services to initialize, then try again.
+
+### A port is already in use
+
+Another process or Docker project may already be using one of the configured ports. Stop the conflicting process or container before starting DigitalCoach.
+
+## Project Structure
+
+* `digital-coach-app/` - Next.js frontend
+* `mlapi/` - FastAPI backend and interview-related API routes
+* `docker-compose.yml` - local multi-service development environment
+
+## Technology
+
+* **Frontend:** Next.js, React, TypeScript
+* **Backend:** FastAPI, Python
+* **Local infrastructure:** Docker Compose, Firebase emulators, Redis, background workers
+* **Interview integrations:** AssemblyAI and HeyGen LiveAvatar
+
+## Development Notes
+
+* Use the Docker Compose workflow above for the recommended local setup.
+* Keep `.env` files and service credentials out of source control.
+* If you change environment variables, rebuild or recreate the affected container so the changes take effect.
