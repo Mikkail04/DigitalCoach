@@ -46,7 +46,7 @@ async def request_token():
     """
     logger.info("Requesting temporary AssemblyAI authentication token...")
 
-    load_dotenv()
+    load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "digital-coach-app", ".env"))
     api_key = os.getenv("ASSEMBLY_API_KEY")
     if not api_key:
         raise KeyError("ASSEMBLY_API_KEY key not found in .env file.")

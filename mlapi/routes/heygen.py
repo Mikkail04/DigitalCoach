@@ -55,7 +55,7 @@ async def start_interview(configs: HeyGenSessionRequest):
     # Attempt to get session token
     try:
         # load variables from .env
-        #load_dotenv()
+        load_dotenv(os.path.join(os.path.dirname(__file__), "..", "..", "digital-coach-app", ".env"))
         # get LiveAvatar API key
         api_key = os.getenv("HEYGEN_LIVEAVATAR_API")
         if not api_key: 

@@ -49,7 +49,7 @@ async def create_interview(request: CreateInterviewRequest):
 
         logger.info("Inserted new interview!")
 
-        logger.info(f"Starting analysis on interview={interview["id"]}")
+        logger.info(f"Starting analysis on interview={interview['id']}")
         # Start analysis jobs on interview
         analysisRequest = AnalyzeInterviewRequest(
             user_id=request.userId, interview_id=interview["id"]
